@@ -1,7 +1,6 @@
 package collection
 
 import (
-	extensioncurrency "github.com/ProtoconNet/mitum-currency-extension/v2/currency"
 	bsonenc "github.com/ProtoconNet/mitum-currency/v2/digest/util/bson"
 	"github.com/ProtoconNet/mitum-nft/nft"
 	"github.com/ProtoconNet/mitum2/util"
@@ -9,24 +8,24 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s CollectionDesignStateValue) MarshalBSON() ([]byte, error) {
+func (s CollectionStateValue) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":            s.Hint().String(),
-			"collectiondesign": s.CollectionDesign,
+			"collectiondesign": s.Design,
 		},
 	)
 }
 
-type CollectionDesignStateValueBSONUnmarshaler struct {
-	Hint             string   `bson:"_hint"`
-	CollectionDesign bson.Raw `bson:"collectiondesign"`
+type CollectionStateValueBSONUnmarshaler struct {
+	Hint   string   `bson:"_hint"`
+	Design bson.Raw `bson:"collectiondesign"`
 }
 
-func (s *CollectionDesignStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringErrorFunc("failed to decode bson of CollectionDesignStateValue")
+func (s *CollectionStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
+	e := util.StringErrorFunc("failed to decode bson of CollectionStateValue")
 
-	var u CollectionDesignStateValueBSONUnmarshaler
+	var u CollectionStateValueBSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
 		return e(err, "")
 	}
@@ -38,31 +37,31 @@ func (s *CollectionDesignStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) 
 	s.BaseHinter = hint.NewBaseHinter(ht)
 
 	var cd CollectionDesign
-	if err := cd.DecodeBSON(u.CollectionDesign, enc); err != nil {
+	if err := cd.DecodeBSON(u.Design, enc); err != nil {
 		return e(err, "")
 	}
-	s.CollectionDesign = cd
+	s.Design = cd
 
 	return nil
 }
 
-func (s CollectionLastNFTIndexStateValue) MarshalBSON() ([]byte, error) {
+func (s LastNFTIndexStateValue) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint":      s.Hint().String(),
-			"collection": s.Collection,
-			"index":      s.Index,
+			"_hint": s.Hint().String(),
+			// "collection": s.Collection,
+			"index": s.Index,
 		},
 	)
 }
 
 type CollectionLastNFTIndexStateValueBSONUnmarshaler struct {
-	Hint       string `bson:"_hint"`
-	Collection string `bson:"collection"`
-	Index      uint64 `bson:"index"`
+	Hint string `bson:"_hint"`
+	// Collection string `bson:"collection"`
+	Index uint64 `bson:"index"`
 }
 
-func (s *CollectionLastNFTIndexStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
+func (s *LastNFTIndexStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	e := util.StringErrorFunc("failed to decode bson of CollectionLastNFTIndexStateValue")
 
 	var u CollectionLastNFTIndexStateValueBSONUnmarshaler
@@ -76,7 +75,7 @@ func (s *CollectionLastNFTIndexStateValue) DecodeBSON(b []byte, enc *bsonenc.Enc
 	}
 	s.BaseHinter = hint.NewBaseHinter(ht)
 
-	s.Collection = extensioncurrency.ContractID(u.Collection)
+	// s.Collection = extensioncurrency.ContractID(u.Collection)
 	s.Index = u.Index
 
 	return nil
@@ -156,24 +155,24 @@ func (s *NFTBoxStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	return nil
 }
 
-func (s AgentBoxStateValue) MarshalBSON() ([]byte, error) {
+func (s OperatorsBookStateValue) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint":    s.Hint().String(),
-			"agentbox": s.Box,
+			"_hint":         s.Hint().String(),
+			"operatorsbook": s.Operators,
 		},
 	)
 }
 
-type AgentBoxStateValueBSONUnmarshaler struct {
-	Hint string   `bson:"_hint"`
-	Box  bson.Raw `bson:"agentbox"`
+type OperatorsBookStateValueBSONUnmarshaler struct {
+	Hint      string   `bson:"_hint"`
+	Operators bson.Raw `bson:"operatorsbook"`
 }
 
-func (s *AgentBoxStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringErrorFunc("failed to decode bson of AgentBoxStateValue")
+func (s *OperatorsBookStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
+	e := util.StringErrorFunc("failed to decode bson of OperatorsBookStateValue")
 
-	var u AgentBoxStateValueBSONUnmarshaler
+	var u OperatorsBookStateValueBSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
 		return e(err, "")
 	}
@@ -184,11 +183,11 @@ func (s *AgentBoxStateValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 	s.BaseHinter = hint.NewBaseHinter(ht)
 
-	var box AgentBox
-	if err := box.DecodeBSON(u.Box, enc); err != nil {
+	var operators OperatorsBook
+	if err := operators.DecodeBSON(u.Operators, enc); err != nil {
 		return e(err, "")
 	}
-	s.Box = box
+	s.Operators = operators
 
 	return nil
 }
