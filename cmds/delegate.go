@@ -18,7 +18,7 @@ type DelegateCommand struct {
 	cmds.OperationFlags
 	Sender     cmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
 	Contract   cmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string              `arg:"" name:"collection" help:"collection name" required:"true"`
+	Collection string              `arg:"" name:"collection" help:"collection id" required:"true"`
 	Operator   cmds.AddressFlag    `arg:"" name:"operator" help:"operator account address"`
 	Currency   cmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
 	Mode       string              `name:"mode" help:"delegate mode" optional:""`
@@ -73,11 +73,11 @@ func (cmd *DelegateCommand) parseFlags() error {
 		cmd.sender = a
 	}
 
-	symbol := extensioncurrency.ContractID(cmd.Collection)
-	if err := symbol.IsValid(nil); err != nil {
+	collection := extensioncurrency.ContractID(cmd.Collection)
+	if err := collection.IsValid(nil); err != nil {
 		return err
 	}
-	cmd.collection = symbol
+	cmd.collection = collection
 
 	if a, err := cmd.Operator.Encode(enc); err != nil {
 		return errors.Wrapf(err, "invalid operator address format; %q", cmd.Operator)
