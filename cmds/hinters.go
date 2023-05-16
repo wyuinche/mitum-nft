@@ -71,7 +71,6 @@ var hinters = []encoder.DecodeDetail{
 
 	{Hint: nft.SignerHint, Instance: nft.Signer{}},
 	{Hint: nft.SignersHint, Instance: nft.Signers{}},
-	{Hint: nft.NFTIDHint, Instance: nft.NFTID{}},
 	{Hint: nft.NFTHint, Instance: nft.NFT{}},
 	{Hint: nft.DesignHint, Instance: nft.Design{}},
 
@@ -84,10 +83,8 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: collection.CollectionPolicyHint, Instance: collection.CollectionPolicy{}},
 	{Hint: collection.CollectionDesignHint, Instance: collection.CollectionDesign{}},
 	{Hint: collection.CollectionStateValueHint, Instance: collection.CollectionStateValue{}},
-	{Hint: collection.CollectionRegisterFormHint, Instance: collection.CollectionRegisterForm{}},
 	{Hint: collection.CollectionRegisterHint, Instance: collection.CollectionRegister{}},
 	{Hint: collection.CollectionPolicyUpdaterHint, Instance: collection.CollectionPolicyUpdater{}},
-	{Hint: collection.MintFormHint, Instance: collection.MintForm{}},
 	{Hint: collection.MintItemHint, Instance: collection.MintItem{}},
 	{Hint: collection.MintHint, Instance: collection.Mint{}},
 	{Hint: collection.NFTTransferItemHint, Instance: collection.NFTTransferItem{}},

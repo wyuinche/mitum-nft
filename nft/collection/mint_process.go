@@ -41,7 +41,7 @@ type MintItemProcessor struct {
 func (ipp *MintItemProcessor) PreProcess(
 	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
 ) error {
-	id := nft.NewNFTID(ipp.item.Collection(), ipp.idx)
+	id := nft.NFTID(ipp.idx)
 	if err := id.IsValid(nil); err != nil {
 		return errors.Errorf("invalid nft id, %q: %w", id, err)
 	}
@@ -50,9 +50,8 @@ func (ipp *MintItemProcessor) PreProcess(
 		return errors.Errorf("nft already exists, %q: %w", id, err)
 	}
 
-	form := ipp.item.Form()
-	if form.Creators().Total() != 0 {
-		creators := form.Creators().Signers()
+	if ipp.item.Creators().Total() != 0 {
+		creators := ipp.item.Creators().Signers()
 		for _, creator := range creators {
 			acc := creator.Account()
 			if err := checkExistsState(currency.StateKeyAccount(acc), getStateFunc); err != nil {
@@ -67,21 +66,6 @@ func (ipp *MintItemProcessor) PreProcess(
 		}
 	}
 
-	if form.Copyrighters().Total() != 0 {
-		copyrighters := form.Copyrighters().Signers()
-		for _, copyrighter := range copyrighters {
-			acc := copyrighter.Account()
-			if err := checkExistsState(currency.StateKeyAccount(acc), getStateFunc); err != nil {
-				return errors.Errorf("copyrighter not found, %q: %w", acc, err)
-			} else if err = checkNotExistsState(extensioncurrency.StateKeyContractAccount(acc), getStateFunc); err != nil {
-				return errors.Errorf("contract account cannot be a copyrighter, %q: %w", acc, err)
-			}
-			if copyrighter.Signed() {
-				return errors.Errorf("cannot sign at the same time as minting, %q", acc)
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -90,14 +74,12 @@ func (ipp *MintItemProcessor) Process(
 ) ([]base.StateMergeValue, error) {
 	sts := make([]base.StateMergeValue, 1)
 
-	form := ipp.item.Form()
-
-	id := nft.NewNFTID(ipp.item.Collection(), ipp.idx)
+	id := nft.NFTID(ipp.idx)
 	if err := id.IsValid(nil); err != nil {
 		return nil, errors.Errorf("invalid nft id, %q: %w", id, err)
 	}
 
-	n := nft.NewNFT(id, true, ipp.sender, form.NFTHash(), form.URI(), ipp.sender, form.Creators(), form.Copyrighters())
+	n := nft.NewNFT(id, true, ipp.sender, ipp.item.NFTHash(), ipp.item.URI(), ipp.sender, ipp.item.Creators())
 	if err := n.IsValid(nil); err != nil {
 		return nil, errors.Errorf("invalid nft, %q: %w", id, err)
 	}
@@ -237,12 +219,12 @@ func (opp *MintProcessor) PreProcess(
 				return nil, base.NewBaseOperationProcessReasonError("collection last index not found, %q: %w", collection, err), nil
 			}
 
-			idx, err := StateLastNFTIndexValue(st)
+			nftID, err := StateLastNFTIndexValue(st)
 			if err != nil {
 				return nil, base.NewBaseOperationProcessReasonError("collection last index value not found, %q: %w", collection, err), nil
 			}
 
-			idxes[collection] = idx
+			idxes[collection] = nftID.Index()
 		}
 	}
 
@@ -294,12 +276,12 @@ func (opp *MintProcessor) Process( // nolint:dupl
 				return nil, base.NewBaseOperationProcessReasonError("collection last index not found, %q: %w", collection, err), nil
 			}
 
-			idx, err := StateLastNFTIndexValue(st)
+			nftID, err := StateLastNFTIndexValue(st)
 			if err != nil {
 				return nil, base.NewBaseOperationProcessReasonError("collection last index value not found, %q: %w", collection, err), nil
 			}
 
-			idxes[idxKey] = idx
+			idxes[idxKey] = nftID.Index()
 		}
 		nftsKey := NFTStateKey(item.contract, collection, NFTsKey)
 		if _, found := boxes[nftsKey]; !found {
@@ -353,7 +335,7 @@ func (opp *MintProcessor) Process( // nolint:dupl
 	}
 
 	for key, idx := range idxes {
-		iv := NewStateMergeValue(key, NewLastNFTIndexStateValue(idx))
+		iv := NewStateMergeValue(key, NewLastNFTIndexStateValue(nft.NFTID(idx)))
 		sts = append(sts, iv)
 	}
 

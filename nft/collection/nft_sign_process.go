@@ -43,7 +43,7 @@ func (ipp *NFTSignItemProcessor) PreProcess(
 
 	st, err := existsState(NFTStateKey(ipp.item.contract, ipp.item.collection, CollectionKey), "key of design", getStateFunc)
 	if err != nil {
-		return errors.Errorf("collection design not found, %q: %w", nid.Collection(), err)
+		return errors.Errorf("collection design not found, %q: %w", ipp.item.collection, err)
 	}
 
 	design, err := StateCollectionValue(st)
@@ -52,7 +52,7 @@ func (ipp *NFTSignItemProcessor) PreProcess(
 	}
 
 	if !design.Active() {
-		return errors.Errorf("deactivated collection, %q", nid.Collection())
+		return errors.Errorf("deactivated collection, %q", ipp.item.collection)
 	}
 	st, err = existsState(extensioncurrency.StateKeyContractAccount(ipp.item.contract), "contract account", getStateFunc)
 	if err != nil {
@@ -82,17 +82,8 @@ func (ipp *NFTSignItemProcessor) PreProcess(
 		return errors.Errorf("burned nft, %q", nid)
 	}
 
-	switch ipp.item.Qualification() {
-	case CreatorQualification:
-		if nv.Creators().IsSignedByAddress(ipp.sender) {
-			return errors.Errorf("already signed nft, %q-%q", ipp.sender, nv.ID())
-		}
-	case CopyrighterQualification:
-		if nv.Copyrighters().IsSignedByAddress(ipp.sender) {
-			return errors.Errorf("already signed nft, %q-%q", ipp.sender, nv.ID())
-		}
-	default:
-		return errors.Errorf("wrong qualification, %q", ipp.item.Qualification())
+	if nv.Creators().IsSignedByAddress(ipp.sender) {
+		return errors.Errorf("already signed nft, %q-%q", ipp.sender, nv.ID())
 	}
 
 	return nil
@@ -113,16 +104,7 @@ func (ipp *NFTSignItemProcessor) Process(
 		return nil, errors.Errorf("nft value not found, %q: %w", nid, err)
 	}
 
-	var signers nft.Signers
-
-	switch ipp.item.Qualification() {
-	case CreatorQualification:
-		signers = nv.Creators()
-	case CopyrighterQualification:
-		signers = nv.Copyrighters()
-	default:
-		return nil, errors.Errorf("wrong qualification, %q", ipp.item.Qualification())
-	}
+	signers := nv.Creators()
 
 	idx := signers.IndexByAddress(ipp.sender)
 	if idx < 0 {
@@ -139,12 +121,7 @@ func (ipp *NFTSignItemProcessor) Process(
 		return nil, errors.Errorf("failed to set signer for signers, %q: %w", signer, err)
 	}
 
-	var n nft.NFT
-	if ipp.item.Qualification() == CreatorQualification {
-		n = nft.NewNFT(nv.ID(), nv.Active(), nv.Owner(), nv.NFTHash(), nv.URI(), nv.Approved(), *sns, nv.Copyrighters())
-	} else {
-		n = nft.NewNFT(nv.ID(), nv.Active(), nv.Owner(), nv.NFTHash(), nv.URI(), nv.Approved(), nv.Creators(), *sns)
-	}
+	n := nft.NewNFT(nv.ID(), nv.Active(), nv.Owner(), nv.NFTHash(), nv.URI(), nv.Approved(), *sns)
 
 	if err := n.IsValid(nil); err != nil {
 		return nil, errors.Errorf("invalid nft, %q: %w", n.ID(), err)

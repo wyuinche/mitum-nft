@@ -54,12 +54,12 @@ func (ipp *NFTTransferItemProcessor) PreProcess(
 
 	st, err := existsState(NFTStateKey(ipp.item.contract, ipp.item.collection, CollectionKey), "design", getStateFunc)
 	if err != nil {
-		return errors.Errorf("collection design not found, %q: %w", nid.Collection(), err)
+		return errors.Errorf("collection design not found, %q: %w", ipp.item.collection, err)
 	}
 
 	design, err := StateCollectionValue(st)
 	if err != nil {
-		return errors.Errorf("collection design not found, %q: %w", nid.Collection(), err)
+		return errors.Errorf("collection design not found, %q: %w", ipp.item.collection, err)
 	}
 	if !design.Active() {
 		return errors.Errorf("deactivated collection, %q", design.Collection())
@@ -122,7 +122,7 @@ func (ipp *NFTTransferItemProcessor) Process(
 		return nil, errors.Errorf("nft value not found, %q: %w", nid, err)
 	}
 
-	n := nft.NewNFT(nid, nv.Active(), receiver, nv.NFTHash(), nv.URI(), receiver, nv.Creators(), nv.Copyrighters())
+	n := nft.NewNFT(nid, nv.Active(), receiver, nv.NFTHash(), nv.URI(), receiver, nv.Creators())
 	if err := n.IsValid(nil); err != nil {
 		return nil, errors.Errorf("invalid nft, %q: %w", nid, err)
 	}
