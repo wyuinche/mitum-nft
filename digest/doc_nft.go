@@ -1,8 +1,8 @@
 package digest
 
 import (
+	mongodbstorage "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
-	mongodbstorage "github.com/ProtoconNet/mitum-nft/v2/digest/mongodb"
 	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
 	"github.com/ProtoconNet/mitum2/base"

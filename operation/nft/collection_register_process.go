@@ -2,6 +2,7 @@ package nft
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
@@ -65,7 +66,7 @@ func (opp *CollectionRegisterProcessor) PreProcess(
 	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc,
 ) (context.Context, mitumbase.OperationProcessReasonError, error) {
 	e := util.StringError("failed to preprocess CollectionRegister")
-
+	fmt.Println(">>>>>>>>>>>>>>>>>>")
 	fact, ok := op.Fact().(CollectionRegisterFact)
 	if !ok {
 		return ctx, nil, e.Errorf("expected CollectionRegisterFact, not %T", op.Fact())
@@ -77,6 +78,11 @@ func (opp *CollectionRegisterProcessor) PreProcess(
 
 	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q: %w", fact.Sender(), err), nil
+	}
+
+	_, err := state.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
+	if err != nil {
+		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q: %w", fact.Currency(), err), nil
 	}
 
 	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
@@ -130,7 +136,7 @@ func (opp *CollectionRegisterProcessor) Process(
 	[]mitumbase.StateMergeValue, mitumbase.OperationProcessReasonError, error,
 ) {
 	e := util.StringError("failed to process CollectionRegister")
-
+	fmt.Println("<<<<<<<<<<<<<<<1")
 	fact, ok := op.Fact().(CollectionRegisterFact)
 	if !ok {
 		return nil, nil, e.Errorf("expected CollectionRegisterFact, not %T", op.Fact())
@@ -143,7 +149,7 @@ func (opp *CollectionRegisterProcessor) Process(
 	if err := design.IsValid(nil); err != nil {
 		return nil, mitumbase.NewBaseOperationProcessReasonError("invalid collection design, %q: %w", fact.Collection(), err), nil
 	}
-
+	fmt.Println("<<<<<<<<<<<<<<<1")
 	sts[0] = currencystate.NewStateMergeValue(
 		statenft.NFTStateKey(design.Parent(), design.Collection(), statenft.CollectionKey),
 		statenft.NewCollectionStateValue(design),
@@ -152,12 +158,12 @@ func (opp *CollectionRegisterProcessor) Process(
 		statenft.NFTStateKey(design.Parent(), design.Collection(), statenft.LastIDXKey),
 		statenft.NewLastNFTIndexStateValue(0),
 	)
-
+	fmt.Println("<<<<<<<<<<<<<<<1")
 	currencyPolicy, err := state.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
 	if err != nil {
 		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q: %w", fact.Currency(), err), nil
 	}
-
+	fmt.Println("<<<<<<<<<<<<<<<1")
 	fee, err := currencyPolicy.Feeer().Fee(common.ZeroBig)
 	if err != nil {
 		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check fee of currency, %q: %w", fact.Currency(), err), nil
@@ -184,7 +190,7 @@ func (opp *CollectionRegisterProcessor) Process(
 		sb.Key(),
 		statecurrency.NewBalanceStateValue(v.Amount.WithBig(v.Amount.Big().Sub(fee))),
 	)
-
+	fmt.Println("<<<<<<<<<<<<<<<2")
 	return sts, nil, nil
 }
 

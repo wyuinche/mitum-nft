@@ -2,20 +2,18 @@ package digest
 
 import (
 	"context"
-	"fmt"
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/network/quicmemberlist"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/ProtoconNet/mitum-nft/v2/digest/network"
+	"github.com/ProtoconNet/mitum-currency/v3/digest/network"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/logging"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -23,76 +21,17 @@ import (
 )
 
 var (
-	HTTP2EncoderHintHeader = http.CanonicalHeaderKey("x-mitum-encoder-hint")
-	HALMimetype            = "application/hal+json; charset=utf-8"
+	HandlerPathNFTOperators  = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}/account/{address:(?i)` + base.REStringAddressString + `}/operators` // revive:disable-line:line-length-limit
+	HandlerPathNFTCollection = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}`
+	HandlerPathNFT           = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}/{id:.*}`
+	HandlerPathNFTs          = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}/nfts`
 )
-
-var (
-	HandlerPathNodeInfo           = `/`
-	HandlerPathCurrencies         = `/currency`
-	HandlerPathCurrency           = `/currency/{currencyid:.*}`
-	HandlerPathManifests          = `/block/manifests`
-	HandlerPathOperations         = `/block/operations`
-	HandlerPathOperation          = `/block/operation/{hash:(?i)[0-9a-z][0-9a-z]+}`
-	HandlerPathBlockByHeight      = `/block/{height:[0-9]+}`
-	HandlerPathBlockByHash        = `/block/{hash:(?i)[0-9a-z][0-9a-z]+}`
-	HandlerPathOperationsByHeight = `/block/{height:[0-9]+}/operations`
-	HandlerPathManifestByHeight   = `/block/{height:[0-9]+}/manifest`
-	HandlerPathManifestByHash     = `/block/{hash:(?i)[0-9a-z][0-9a-z]+}/manifest`
-	HandlerPathAccount            = `/account/{address:(?i)` + base.REStringAddressString + `}`            // revive:disable-line:line-length-limit
-	HandlerPathAccountOperations  = `/account/{address:(?i)` + base.REStringAddressString + `}/operations` // revive:disable-line:line-length-limit
-	HandlerPathAccounts           = `/accounts`
-	HandlerPathNFTOperators       = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}/account/{address:(?i)` + base.REStringAddressString + `}/operators` // revive:disable-line:line-length-limit
-	// HandlerPathAccountNFTs                = `/account/{address:(?i)` + base.REStringAddressString + `}/nfts`                                                                                      // revive:disable-line:line-length-limit
-	HandlerPathNFTCollection              = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}`
-	HandlerPathNFT                        = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}/{id:.*}`
-	HandlerPathNFTs                       = `/nft/{contract:.*}/collection/{collection:[A-Z0-9][A-Z0-9_\.\!\$\*\@]*[A-Z0-9]+}/nfts`
-	HandlerPathOperationBuildFactTemplate = `/builder/operation/fact/template/{fact:[\w][\w\-]*}`
-	HandlerPathOperationBuildFact         = `/builder/operation/fact`
-	HandlerPathOperationBuildSign         = `/builder/operation/sign`
-	HandlerPathOperationBuild             = `/builder/operation`
-	HandlerPathSend                       = `/builder/send`
-)
-
-var RateLimitHandlerMap = map[string]string{
-	"node-info":                  HandlerPathNodeInfo,
-	"currencies":                 HandlerPathCurrencies,
-	"currency":                   HandlerPathCurrency,
-	"block-manifests":            HandlerPathManifests,
-	"block-operations":           HandlerPathOperations,
-	"block-operation":            HandlerPathOperation,
-	"block-by-height":            HandlerPathBlockByHeight,
-	"block-by-hash":              HandlerPathBlockByHash,
-	"block-operations-by-height": HandlerPathOperationsByHeight,
-	"block-manifest-by-height":   HandlerPathManifestByHeight,
-	"block-manifest-by-hash":     HandlerPathManifestByHash,
-	"account":                    HandlerPathAccount,
-	"account-operations":         HandlerPathAccountOperations,
-	"accounts":                   HandlerPathAccounts,
-	"nft-operators":              HandlerPathNFTOperators,
-	// "nft-box":HandlerPathAccountNFTs,
-	"nft-collection":                  HandlerPathNFTCollection,
-	"nft-item":                        HandlerPathNFT,
-	"nft-box":                         HandlerPathNFTs,
-	"builder-operation-fact-template": HandlerPathOperationBuildFactTemplate,
-	"builder-operation-fact":          HandlerPathOperationBuildFact,
-	"builder-operation-sign":          HandlerPathOperationBuildSign,
-	"builder-operation":               HandlerPathOperationBuild,
-	"builder-send":                    HandlerPathSend,
-}
-
-var (
-	UnknownProblem     = NewProblem(DefaultProblemType, "unknown problem occurred")
-	unknownProblemJSON []byte
-)
-
-var GlobalItemsLimit int64 = 10
 
 func init() {
-	if b, err := Marshal(UnknownProblem); err != nil {
+	if b, err := Marshal(currencydigest.UnknownProblem); err != nil {
 		panic(err)
 	} else {
-		unknownProblemJSON = b
+		currencydigest.UnknownProblemJSON = b
 	}
 }
 
@@ -101,9 +40,9 @@ type Handlers struct {
 	networkID       base.NetworkID
 	encs            *encoder.Encoders
 	enc             encoder.Encoder
-	database        *Database
-	cache           Cache
-	nodeInfoHandler NodeInfoHandler
+	database        *currencydigest.Database
+	cache           currencydigest.Cache
+	nodeInfoHandler currencydigest.NodeInfoHandler
 	send            func(interface{}) (base.Operation, error)
 	client          func() (*isaacnetwork.QuicstreamClient, *quicmemberlist.Memberlist, error)
 	router          *mux.Router
@@ -118,8 +57,9 @@ func NewHandlers(
 	networkID base.NetworkID,
 	encs *encoder.Encoders,
 	enc encoder.Encoder,
-	st *Database,
-	cache Cache,
+	st *currencydigest.Database,
+	cache currencydigest.Cache,
+	router *mux.Router,
 ) *Handlers {
 	var log *logging.Logging
 	if err := util.LoadFromContextOK(ctx, launch.LoggingContextKey, &log); err != nil {
@@ -133,22 +73,22 @@ func NewHandlers(
 		enc:             enc,
 		database:        st,
 		cache:           cache,
-		router:          mux.NewRouter(),
+		router:          router,
 		routes:          map[string]*mux.Route{},
-		itemsLimiter:    DefaultItemsLimiter,
+		itemsLimiter:    currencydigest.DefaultItemsLimiter,
 		rg:              &singleflight.Group{},
 		expireNotFilled: time.Second * 3,
 	}
 }
 
 func (hd *Handlers) Initialize() error {
-	cors := handlers.CORS(
-		handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}),
-		handlers.AllowedHeaders([]string{"content-type"}),
-		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowCredentials(),
-	)
-	hd.router.Use(cors)
+	//cors := handlers.CORS(
+	//	handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}),
+	//	handlers.AllowedHeaders([]string{"content-type"}),
+	//	handlers.AllowedOrigins([]string{"*"}),
+	//	handlers.AllowCredentials(),
+	//)
+	//hd.router.Use(cors)
 
 	hd.setHandlers()
 
@@ -161,7 +101,7 @@ func (hd *Handlers) SetLimiter(f func(string) int64) *Handlers {
 	return hd
 }
 
-func (hd *Handlers) Cache() Cache {
+func (hd *Handlers) Cache() currencydigest.Cache {
 	return hd.cache
 }
 
@@ -174,28 +114,6 @@ func (hd *Handlers) Handler() http.Handler {
 }
 
 func (hd *Handlers) setHandlers() {
-	_ = hd.setHandler(HandlerPathCurrencies, hd.handleCurrencies, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathCurrency, hd.handleCurrency, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathManifests, hd.handleManifests, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperations, hd.handleOperations, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperation, hd.handleOperation, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperationsByHeight, hd.handleOperationsByHeight, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathManifestByHeight, hd.handleManifestByHeight, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathManifestByHash, hd.handleManifestByHash, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathBlockByHeight, hd.handleBlock, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathBlockByHash, hd.handleBlock, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathAccount, hd.handleAccount, true).
-		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathNFTCollection, hd.handleNFTCollection, true).
 		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathNFTs, hd.handleNFTs, true).
@@ -204,22 +122,6 @@ func (hd *Handlers) setHandlers() {
 		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathNFT, hd.handleNFT, true).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathAccountOperations, hd.handleAccountOperations, true).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathAccounts, hd.handleAccounts, true).
-		Methods(http.MethodOptions, "GET")
-	// _ = hd.setHandler(HandlerPathOperationBuildFactTemplate, hd.handleOperationBuildFactTemplate, true).
-	// 	Methods(http.MethodOptions, "GET")
-	// _ = hd.setHandler(HandlerPathOperationBuildFact, hd.handleOperationBuildFact, false).
-	// 	Methods(http.MethodOptions, http.MethodPost)
-	// _ = hd.setHandler(HandlerPathOperationBuildSign, hd.handleOperationBuildSign, false).
-	// 	Methods(http.MethodOptions, http.MethodPost)
-	// _ = hd.setHandler(HandlerPathOperationBuild, hd.handleOperationBuild, true).
-	// 	Methods(http.MethodOptions, http.MethodGet, http.MethodPost)
-	_ = hd.setHandler(HandlerPathSend, hd.handleSend, false).
-		Methods(http.MethodOptions, http.MethodPost)
-	_ = hd.setHandler(HandlerPathNodeInfo, hd.handleNodeInfo, true).
-		Methods(http.MethodOptions, "GET")
 }
 
 func (hd *Handlers) setHandler(prefix string, h network.HTTPHandlerFunc, useCache bool) *mux.Route {
@@ -227,7 +129,7 @@ func (hd *Handlers) setHandler(prefix string, h network.HTTPHandlerFunc, useCach
 	if !useCache {
 		handler = http.HandlerFunc(h)
 	} else {
-		ch := NewCachedHTTPHandler(hd.cache, h)
+		ch := currencydigest.NewCachedHTTPHandler(hd.cache, h)
 
 		handler = ch
 	}
@@ -282,36 +184,4 @@ func (hd *Handlers) combineURL(path string, pairs ...string) (string, error) {
 		return "", errors.Wrap(err, "failed to combine url")
 	}
 	return u.String(), nil
-}
-
-func CacheKeyPath(r *http.Request) string {
-	return r.URL.Path
-}
-
-func CacheKey(key string, s ...string) string {
-	var l []string
-	var notempty bool
-	for i := len(s) - 1; i >= 0; i-- {
-		a := s[i]
-
-		if !notempty {
-			if len(strings.TrimSpace(a)) < 1 {
-				continue
-			}
-			notempty = true
-		}
-
-		l = append(l, a)
-	}
-
-	r := make([]string, len(l))
-	for i := range l {
-		r[len(l)-1-i] = l[i]
-	}
-
-	return fmt.Sprintf("%s-%s", key, strings.Join(r, ","))
-}
-
-func DefaultItemsLimiter(string) int64 {
-	return GlobalItemsLimit
 }

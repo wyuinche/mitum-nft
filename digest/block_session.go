@@ -3,6 +3,7 @@ package digest
 import (
 	"context"
 	"fmt"
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	"strconv"
 	"sync"
 	"time"
@@ -13,8 +14,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/ProtoconNet/mitum-currency/v3/digest/isaac"
 	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	"github.com/ProtoconNet/mitum-nft/v2/digest/isaac"
 
 	mitumbase "github.com/ProtoconNet/mitum2/base"
 	mitumutil "github.com/ProtoconNet/mitum2/util"
@@ -29,7 +30,7 @@ type BlockSession struct {
 	ops                   []mitumbase.Operation
 	opstree               fixedtree.Tree
 	sts                   []mitumbase.State
-	st                    *Database
+	st                    *currencydigest.Database
 	opsTreeNodes          map[string]mitumbase.OperationFixedtreeNode
 	blockModels           []mongo.WriteModel
 	operationModels       []mongo.WriteModel
@@ -47,7 +48,7 @@ type BlockSession struct {
 }
 
 func NewBlockSession(
-	st *Database,
+	st *currencydigest.Database,
 	blk mitumbase.BlockMap,
 	ops []mitumbase.Operation,
 	opstree fixedtree.Tree,
@@ -135,8 +136,8 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 	}
 
 	if len(bs.nftModels) > 0 {
-		for nft, _ := range bs.nftMap {
-			err := bs.st.cleanByHeightColName(
+		for nft := range bs.nftMap {
+			err := bs.st.CleanByHeightColName(
 				ctx,
 				bs.block.Manifest().Height(),
 				defaultColNameNFT,
@@ -215,7 +216,7 @@ func (bs *BlockSession) prepareBlock() error {
 		bs.block.Manifest().ProposedAt(),
 	)
 
-	doc, err := NewManifestDoc(manifest, bs.st.database.Encoder(), bs.block.Manifest().Height(), bs.ops, bs.block.SignedAt())
+	doc, err := currencydigest.NewManifestDoc(manifest, bs.st.DatabaseEncoder(), bs.block.Manifest().Height(), bs.ops, bs.block.SignedAt())
 	if err != nil {
 		return err
 	}
@@ -248,9 +249,9 @@ func (bs *BlockSession) prepareOperations() error {
 			return mitumutil.ErrNotFound.Errorf("operation, %s not found in operations tree", op.Fact().Hash().String())
 		}
 
-		doc, err := NewOperationDoc(
+		doc, err := currencydigest.NewOperationDoc(
 			op,
-			bs.st.database.Encoder(),
+			bs.st.DatabaseEncoder(),
 			bs.block.Manifest().Height(),
 			bs.block.SignedAt(),
 			inState,
@@ -382,9 +383,9 @@ func (bs *BlockSession) prepareNFTs() error {
 }
 
 func (bs *BlockSession) handleAccountState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	if rs, err := NewAccountValue(st); err != nil {
+	if rs, err := currencydigest.NewAccountValue(st); err != nil {
 		return nil, err
-	} else if doc, err := NewAccountDoc(rs, bs.st.database.Encoder()); err != nil {
+	} else if doc, err := currencydigest.NewAccountDoc(rs, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
 		return []mongo.WriteModel{mongo.NewInsertOneModel().SetDocument(doc)}, nil
@@ -392,23 +393,15 @@ func (bs *BlockSession) handleAccountState(st mitumbase.State) ([]mongo.WriteMod
 }
 
 func (bs *BlockSession) handleBalanceState(st mitumbase.State) ([]mongo.WriteModel, string, error) {
-	doc, address, err := NewBalanceDoc(st, bs.st.database.Encoder())
+	doc, address, err := currencydigest.NewBalanceDoc(st, bs.st.DatabaseEncoder())
 	if err != nil {
 		return nil, "", err
 	}
 	return []mongo.WriteModel{mongo.NewInsertOneModel().SetDocument(doc)}, address, nil
 }
 
-func (bs *BlockSession) handleContractAccountState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	doc, err := NewContractAccountDoc(st, bs.st.database.Encoder())
-	if err != nil {
-		return nil, err
-	}
-	return []mongo.WriteModel{mongo.NewInsertOneModel().SetDocument(doc)}, nil
-}
-
 func (bs *BlockSession) handleCurrencyState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	doc, err := NewCurrencyDoc(st, bs.st.database.Encoder())
+	doc, err := currencydigest.NewCurrencyDoc(st, bs.st.DatabaseEncoder())
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +409,7 @@ func (bs *BlockSession) handleCurrencyState(st mitumbase.State) ([]mongo.WriteMo
 }
 
 func (bs *BlockSession) handleNFTCollectionState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	if nftCollectionDoc, err := NewNFTCollectionDoc(st, bs.st.database.Encoder()); err != nil {
+	if nftCollectionDoc, err := NewNFTCollectionDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
 		return []mongo.WriteModel{
@@ -426,7 +419,7 @@ func (bs *BlockSession) handleNFTCollectionState(st mitumbase.State) ([]mongo.Wr
 }
 
 func (bs *BlockSession) handleNFTOperatorsState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	if nftCollectionDoc, err := NewNFTOperatorDoc(st, bs.st.database.Encoder()); err != nil {
+	if nftCollectionDoc, err := NewNFTOperatorDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
 		return []mongo.WriteModel{
@@ -436,7 +429,7 @@ func (bs *BlockSession) handleNFTOperatorsState(st mitumbase.State) ([]mongo.Wri
 }
 
 func (bs *BlockSession) handleNFTState(st mitumbase.State) ([]mongo.WriteModel, uint64, error) {
-	if nftDoc, err := NewNFTDoc(st, bs.st.database.Encoder()); err != nil {
+	if nftDoc, err := NewNFTDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, 0, err
 	} else {
 		return []mongo.WriteModel{
@@ -446,7 +439,7 @@ func (bs *BlockSession) handleNFTState(st mitumbase.State) ([]mongo.WriteModel, 
 }
 
 func (bs *BlockSession) handleNFTBoxState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	if nftBoxDoc, err := NewNFTBoxDoc(st, bs.st.database.Encoder()); err != nil {
+	if nftBoxDoc, err := NewNFTBoxDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
 		return []mongo.WriteModel{
@@ -456,7 +449,7 @@ func (bs *BlockSession) handleNFTBoxState(st mitumbase.State) ([]mongo.WriteMode
 }
 
 func (bs *BlockSession) handleNFTLastIndexState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	if nftLastIndexDoc, err := NewNFTLastIndexDoc(st, bs.st.database.Encoder()); err != nil {
+	if nftLastIndexDoc, err := NewNFTLastIndexDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
 		return []mongo.WriteModel{
@@ -500,7 +493,7 @@ func (bs *BlockSession) writeModels(ctx context.Context, col string, models []mo
 
 func (bs *BlockSession) writeModelsChunk(ctx context.Context, col string, models []mongo.WriteModel) error {
 	opts := options.BulkWrite().SetOrdered(false)
-	if res, err := bs.st.database.Client().Collection(col).BulkWrite(ctx, models, opts); err != nil {
+	if res, err := bs.st.DatabaseClient().Collection(col).BulkWrite(ctx, models, opts); err != nil {
 		return err
 	} else if res != nil && res.InsertedCount < 1 {
 		return errors.Errorf("not inserted to %s", col)

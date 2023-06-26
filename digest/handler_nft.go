@@ -1,8 +1,10 @@
 package digest
 
 import (
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/ProtoconNet/mitum2/base"
@@ -10,28 +12,28 @@ import (
 )
 
 func (hd *Handlers) handleNFT(w http.ResponseWriter, r *http.Request) {
-	cachekey := CacheKeyPath(r)
-	if err := LoadFromCache(hd.cache, cachekey, w); err == nil {
+	cachekey := currencydigest.CacheKeyPath(r)
+	if err := currencydigest.LoadFromCache(hd.cache, cachekey, w); err == nil {
 		return
 	}
 
 	contract, err, status := parseRequest(w, r, "contract")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
 
 	collection, err, status := parseRequest(w, r, "collection")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
 
 	id, err, status := parseRequest(w, r, "id")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
@@ -39,21 +41,21 @@ func (hd *Handlers) handleNFT(w http.ResponseWriter, r *http.Request) {
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
 		return hd.handleNFTInGroup(contract, collection, id)
 	}); err != nil {
-		HTTP2HandleError(w, err)
+		currencydigest.HTTP2HandleError(w, err)
 	} else {
-		HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
+		currencydigest.HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
 		if !shared {
-			HTTP2WriteCache(w, cachekey, time.Second*3)
+			currencydigest.HTTP2WriteCache(w, cachekey, time.Second*3)
 		}
 	}
 }
 
 func (hd *Handlers) handleNFTInGroup(contract, collection, id string) (interface{}, error) {
-	switch nft, st, err := hd.database.NFT(contract, collection, id); {
+	switch nft, err := NFT(hd.database, contract, collection, id); {
 	case err != nil:
 		return nil, err
 	default:
-		hal, err := hd.buildNFTHal(contract, collection, *nft, st)
+		hal, err := hd.buildNFTHal(contract, collection, *nft)
 		if err != nil {
 			return nil, err
 		}
@@ -61,33 +63,33 @@ func (hd *Handlers) handleNFTInGroup(contract, collection, id string) (interface
 	}
 }
 
-func (hd *Handlers) buildNFTHal(contract, collection string, nft types.NFT, st base.State) (Hal, error) {
-	h, err := hd.combineURL(HandlerPathNFT, "contract", contract, "collection", collection, "id", string(nft.ID()))
+func (hd *Handlers) buildNFTHal(contract, collection string, nft types.NFT) (currencydigest.Hal, error) {
+	h, err := hd.combineURL(HandlerPathNFT, "contract", contract, "collection", collection, "id", strconv.FormatUint(nft.ID(), 10))
 	if err != nil {
 		return nil, err
 	}
 
-	hal := NewBaseHal(nft, NewHalLink(h, nil))
+	hal := currencydigest.NewBaseHal(nft, currencydigest.NewHalLink(h, nil))
 
 	return hal, nil
 }
 
 func (hd *Handlers) handleNFTCollection(w http.ResponseWriter, r *http.Request) {
-	cachekey := CacheKeyPath(r)
-	if err := LoadFromCache(hd.cache, cachekey, w); err == nil {
+	cachekey := currencydigest.CacheKeyPath(r)
+	if err := currencydigest.LoadFromCache(hd.cache, cachekey, w); err == nil {
 		return
 	}
 
 	contract, err, status := parseRequest(w, r, "contract")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
 
 	collection, err, status := parseRequest(w, r, "collection")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
@@ -95,21 +97,21 @@ func (hd *Handlers) handleNFTCollection(w http.ResponseWriter, r *http.Request) 
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
 		return hd.handleNFTCollectionInGroup(contract, collection)
 	}); err != nil {
-		HTTP2HandleError(w, err)
+		currencydigest.HTTP2HandleError(w, err)
 	} else {
-		HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
+		currencydigest.HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
 		if !shared {
-			HTTP2WriteCache(w, cachekey, time.Second*3)
+			currencydigest.HTTP2WriteCache(w, cachekey, time.Second*3)
 		}
 	}
 }
 
 func (hd *Handlers) handleNFTCollectionInGroup(contract, collection string) (interface{}, error) {
-	switch design, st, err := hd.database.NFTCollection(contract, collection); {
+	switch design, err := NFTCollection(hd.database, contract, collection); {
 	case err != nil:
 		return nil, err
 	default:
-		hal, err := hd.buildNFTCollectionHal(contract, collection, *design, st)
+		hal, err := hd.buildNFTCollectionHal(contract, collection, *design)
 		if err != nil {
 			return nil, err
 		}
@@ -117,13 +119,13 @@ func (hd *Handlers) handleNFTCollectionInGroup(contract, collection string) (int
 	}
 }
 
-func (hd *Handlers) buildNFTCollectionHal(contract, collection string, design types.Design, st base.State) (Hal, error) {
+func (hd *Handlers) buildNFTCollectionHal(contract, collection string, design types.Design) (currencydigest.Hal, error) {
 	h, err := hd.combineURL(HandlerPathNFTs, "contract", contract, "collection", collection)
 	if err != nil {
 		return nil, err
 	}
 
-	hal := NewBaseHal(design, NewHalLink(h, nil))
+	hal := currencydigest.NewBaseHal(design, currencydigest.NewHalLink(h, nil))
 
 	return hal, nil
 }
@@ -133,21 +135,21 @@ func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
 	offset := parseStringQuery(r.URL.Query().Get("offset"))
 	reverse := parseBoolQuery(r.URL.Query().Get("reverse"))
 
-	cachekey := CacheKey(
+	cachekey := currencydigest.CacheKey(
 		r.URL.Path, stringOffsetQuery(offset),
 		stringBoolQuery("reverse", reverse),
 	)
 
 	contract, err, status := parseRequest(w, r, "contract")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
 
 	collection, err, status := parseRequest(w, r, "collection")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
@@ -172,7 +174,7 @@ func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		hd.Log().Err(err).Str("collection", collection).Msg("failed to get nfts")
-		HTTP2HandleError(w, err)
+		currencydigest.HTTP2HandleError(w, err)
 
 		return
 	}
@@ -185,7 +187,7 @@ func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
 		filled = l[1].(bool)
 	}
 
-	HTTP2WriteHalBytes(hd.enc, w, b, http.StatusOK)
+	currencydigest.HTTP2WriteHalBytes(hd.enc, w, b, http.StatusOK)
 
 	if !shared {
 		expire := hd.expireNotFilled
@@ -193,7 +195,7 @@ func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
 			expire = time.Minute
 		}
 
-		HTTP2WriteCache(w, cachekey, expire)
+		currencydigest.HTTP2WriteCache(w, cachekey, expire)
 	}
 }
 
@@ -210,11 +212,11 @@ func (hd *Handlers) handleNFTsInGroup(
 		limit = l
 	}
 
-	var vas []Hal
-	if err := hd.database.NFTsByCollection(
-		contract, collection, reverse, offset, limit,
+	var vas []currencydigest.Hal
+	if err := NFTsByCollection(
+		hd.database, contract, collection, reverse, offset, limit,
 		func(nft types.NFT, st base.State) (bool, error) {
-			hal, err := hd.buildNFTHal(contract, collection, nft, st)
+			hal, err := hd.buildNFTHal(contract, collection, nft)
 			if err != nil {
 				return false, err
 			}
@@ -239,10 +241,10 @@ func (hd *Handlers) handleNFTsInGroup(
 
 func (hd *Handlers) buildCollectionNFTsHal(
 	contract, col string,
-	vas []Hal,
+	vas []currencydigest.Hal,
 	offset string,
 	reverse bool,
-) (Hal, error) {
+) (currencydigest.Hal, error) {
 	baseSelf, err := hd.combineURL(HandlerPathNFTs, "contract", contract, "collection", col)
 	if err != nil {
 		return nil, err
@@ -256,20 +258,20 @@ func (hd *Handlers) buildCollectionNFTsHal(
 		self = addQueryValue(baseSelf, stringBoolQuery("reverse", reverse))
 	}
 
-	var hal Hal
-	hal = NewBaseHal(vas, NewHalLink(self, nil))
+	var hal currencydigest.Hal
+	hal = currencydigest.NewBaseHal(vas, currencydigest.NewHalLink(self, nil))
 
 	h, err := hd.combineURL(HandlerPathNFTCollection, "contract", contract, "collection", col)
 	if err != nil {
 		return nil, err
 	}
-	hal = hal.AddLink("collection", NewHalLink(h, nil))
+	hal = hal.AddLink("collection", currencydigest.NewHalLink(h, nil))
 
 	var nextoffset string
 
 	if len(vas) > 0 {
 		va := vas[len(vas)-1].Interface().(types.NFT)
-		nextoffset = string(va.ID())
+		nextoffset = strconv.FormatUint(va.ID(), 10)
 	}
 
 	if len(nextoffset) > 0 {
@@ -280,37 +282,37 @@ func (hd *Handlers) buildCollectionNFTsHal(
 			next = addQueryValue(next, stringBoolQuery("reverse", reverse))
 		}
 
-		hal = hal.AddLink("next", NewHalLink(next, nil))
+		hal = hal.AddLink("next", currencydigest.NewHalLink(next, nil))
 	}
 
-	hal = hal.AddLink("reverse", NewHalLink(addQueryValue(baseSelf, stringBoolQuery("reverse", !reverse)), nil))
+	hal = hal.AddLink("reverse", currencydigest.NewHalLink(addQueryValue(baseSelf, stringBoolQuery("reverse", !reverse)), nil))
 
 	return hal, nil
 }
 
 func (hd *Handlers) handleNFTOperators(w http.ResponseWriter, r *http.Request) {
-	cachekey := CacheKeyPath(r)
-	if err := LoadFromCache(hd.cache, cachekey, w); err == nil {
+	cachekey := currencydigest.CacheKeyPath(r)
+	if err := currencydigest.LoadFromCache(hd.cache, cachekey, w); err == nil {
 		return
 	}
 
 	contract, err, status := parseRequest(w, r, "contract")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
 
 	collection, err, status := parseRequest(w, r, "collection")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
 
 	account, err, status := parseRequest(w, r, "account")
 	if err != nil {
-		HTTP2ProblemWithError(w, err, status)
+		currencydigest.HTTP2ProblemWithError(w, err, status)
 
 		return
 	}
@@ -318,21 +320,21 @@ func (hd *Handlers) handleNFTOperators(w http.ResponseWriter, r *http.Request) {
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
 		return hd.handleNFTOperatorsInGroup(contract, collection, account)
 	}); err != nil {
-		HTTP2HandleError(w, err)
+		currencydigest.HTTP2HandleError(w, err)
 	} else {
-		HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
+		currencydigest.HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
 		if !shared {
-			HTTP2WriteCache(w, cachekey, time.Second*3)
+			currencydigest.HTTP2WriteCache(w, cachekey, time.Second*3)
 		}
 	}
 }
 
 func (hd *Handlers) handleNFTOperatorsInGroup(contract, collection, account string) (interface{}, error) {
-	switch operators, st, err := hd.database.NFTOperators(contract, collection, account); {
+	switch operators, err := NFTOperators(hd.database, contract, collection, account); {
 	case err != nil:
 		return nil, err
 	default:
-		hal, err := hd.buildNFTOperatorsHal(contract, collection, account, *operators, st)
+		hal, err := hd.buildNFTOperatorsHal(contract, collection, account, *operators)
 		if err != nil {
 			return nil, err
 		}
@@ -340,13 +342,13 @@ func (hd *Handlers) handleNFTOperatorsInGroup(contract, collection, account stri
 	}
 }
 
-func (hd *Handlers) buildNFTOperatorsHal(contract, collection, account string, operators types.OperatorsBook, st base.State) (Hal, error) {
+func (hd *Handlers) buildNFTOperatorsHal(contract, collection, account string, operators types.OperatorsBook) (currencydigest.Hal, error) {
 	h, err := hd.combineURL(HandlerPathNFTOperators, "contract", contract, "collection", collection, "account", account)
 	if err != nil {
 		return nil, err
 	}
 
-	hal := NewBaseHal(operators, NewHalLink(h, nil))
+	hal := currencydigest.NewBaseHal(operators, currencydigest.NewHalLink(h, nil))
 
 	return hal, nil
 }

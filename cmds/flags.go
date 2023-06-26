@@ -13,24 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ContractIDFlag struct {
-	CID currencytypes.ContractID
-}
-
-func (v *ContractIDFlag) UnmarshalText(b []byte) error {
-	cid := currencytypes.ContractID(string(b))
-	if err := cid.IsValid(nil); err != nil {
-		return err
-	}
-	v.CID = cid
-
-	return nil
-}
-
-func (v *ContractIDFlag) String() string {
-	return v.CID.String()
-}
-
 type SignerFlag struct {
 	address string
 	share   uint

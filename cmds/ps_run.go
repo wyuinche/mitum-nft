@@ -39,11 +39,11 @@ func DefaultRunPS() *ps.PS {
 			launch.PNameStartMemberlist,
 			launch.PNameStartNetwork,
 			launch.PNameStates).
-		AddOK(PNameMongoDBsDataBase, ProcessDatabase, nil, currencycmds.PNameDigestDesign, launch.PNameStorage).
-		AddOK(PNameDigester, ProcessDigester, nil, PNameMongoDBsDataBase).
-		AddOK(PNameDigest, ProcessDigestAPI, nil, currencycmds.PNameDigestDesign, PNameMongoDBsDataBase, launch.PNameMemberlist).
-		AddOK(PNameDigestStart, ProcessStartDigestAPI, nil, PNameDigest).
-		AddOK(PNameStartDigester, ProcessStartDigester, nil, PNameDigestStart)
+		AddOK(PNameMongoDBsDataBase, currencycmds.ProcessDatabase, nil, currencycmds.PNameDigestDesign, launch.PNameStorage).
+		AddOK(currencycmds.PNameDigester, ProcessDigester, nil, PNameMongoDBsDataBase).
+		AddOK(PNameDigest, currencycmds.ProcessDigestAPI, nil, currencycmds.PNameDigestDesign, PNameMongoDBsDataBase, launch.PNameMemberlist).
+		AddOK(PNameDigestStart, currencycmds.ProcessStartDigestAPI, nil, PNameDigest).
+		AddOK(currencycmds.PNameStartDigester, ProcessStartDigester, nil, PNameDigestStart)
 
 	_ = pps.POK(launch.PNameEncoder).
 		PostAddOK(launch.PNameAddHinters, PAddHinters)

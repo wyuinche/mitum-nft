@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"context"
-	"fmt"
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extension"
@@ -14,30 +13,7 @@ import (
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
-	"io"
 )
-
-//type NetworkIDFlag []byte
-//
-//func (v *NetworkIDFlag) UnmarshalText(b []byte) error {
-//	*v = b
-//
-//	return nil
-//}
-//
-//func (v NetworkIDFlag) NetworkID() base.NetworkID {
-//	return base.NetworkID(v)
-//}
-
-func PrettyPrint(out io.Writer, i interface{}) {
-	var b []byte
-	b, err := enc.Marshal(i)
-	if err != nil {
-		panic(err)
-	}
-
-	_, _ = fmt.Fprintln(out, string(b))
-}
 
 func POperationProcessorsMap(pctx context.Context) (context.Context, error) {
 	var isaacParams *isaac.Params

@@ -2,14 +2,14 @@ package cmds
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
+	digestisaac "github.com/ProtoconNet/mitum-currency/v3/digest/isaac"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extension"
 	operationisaac "github.com/ProtoconNet/mitum-currency/v3/operation/isaac"
 	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
-	"github.com/ProtoconNet/mitum-nft/v2/digest"
-	digestisaac "github.com/ProtoconNet/mitum-nft/v2/digest/isaac"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
@@ -61,8 +61,8 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: currency.GenesisCurrenciesFactHint, Instance: currency.GenesisCurrenciesFact{}},
 
 	{Hint: digestisaac.ManifestHint, Instance: digestisaac.Manifest{}},
-	{Hint: digest.AccountValueHint, Instance: digest.AccountValue{}},
-	{Hint: digest.OperationValueHint, Instance: digest.OperationValue{}},
+	{Hint: currencydigest.AccountValueHint, Instance: currencydigest.AccountValue{}},
+	{Hint: currencydigest.OperationValueHint, Instance: currencydigest.OperationValue{}},
 
 	{Hint: operationisaac.NetworkPolicyHint, Instance: operationisaac.NetworkPolicy{}},
 	{Hint: operationisaac.NetworkPolicyStateValueHint, Instance: operationisaac.NetworkPolicyStateValue{}},

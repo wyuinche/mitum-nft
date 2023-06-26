@@ -3,6 +3,7 @@ package cmds
 import (
 	"context"
 
+	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 
@@ -50,7 +51,7 @@ func (cmd *ApproveCommand) Run(pctx context.Context) error { // nolint:dupl
 		return err
 	}
 
-	PrettyPrint(cmd.Out, op)
+	currencycmds.PrettyPrint(cmd.Out, op)
 
 	return nil
 }

@@ -3,22 +3,15 @@ module github.com/ProtoconNet/mitum-nft/v2
 go 1.19
 
 require (
-	github.com/ProtoconNet/mitum-currency/v3 v3.0.0-alpha.0.20230621065431-6461b5ff1dc6
+	github.com/ProtoconNet/mitum-currency/v3 v3.0.0-alpha.0.20230626014145-678e04c1291a
 	github.com/ProtoconNet/mitum2 v0.0.0-20230621062736-ad0a8b8967c7
 	github.com/alecthomas/kong v0.7.1
 	github.com/arl/statsviz v0.5.2
-	github.com/bluele/gcache v0.0.2
-	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/json-iterator/go v1.1.12
-	github.com/justinas/alice v1.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/rainycape/memcache v0.0.0-20150622160815-1031fa0ce2f2
 	github.com/rs/zerolog v1.29.0
 	go.mongodb.org/mongo-driver v1.11.0
-	golang.org/x/crypto v0.7.0
-	golang.org/x/net v0.9.0
 	golang.org/x/sync v0.1.0
 )
 
@@ -26,9 +19,11 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/beevik/ntp v0.3.0 // indirect
+	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.3 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2 // indirect
+	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/bytedance/sonic v1.8.7 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -45,6 +40,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/pprof v0.0.0-20230406165453-00490a63f317 // indirect
+	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/consul/api v1.20.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -64,6 +60,7 @@ require (
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hashicorp/vault/api v1.9.0 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
+	github.com/justinas/alice v1.2.0 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -80,6 +77,7 @@ require (
 	github.com/quic-go/qtls-go1-19 v0.3.2 // indirect
 	github.com/quic-go/qtls-go1-20 v0.2.2 // indirect
 	github.com/quic-go/quic-go v0.33.0 // indirect
+	github.com/rainycape/memcache v0.0.0-20150622160815-1031fa0ce2f2 // indirect
 	github.com/redis/go-redis/v9 v9.0.3 // indirect
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
@@ -93,8 +91,10 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	github.com/zeebo/blake3 v0.2.3 // indirect
 	golang.org/x/arch v0.3.0 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect

@@ -3,6 +3,7 @@ package cmds
 import (
 	"context"
 
+	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
@@ -56,7 +57,7 @@ func (cmd *CollectionPolicyUpdaterCommand) Run(pctx context.Context) error {
 		return err
 	}
 
-	PrettyPrint(cmd.Out, op)
+	currencycmds.PrettyPrint(cmd.Out, op)
 
 	return nil
 }

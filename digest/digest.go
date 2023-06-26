@@ -2,10 +2,7 @@ package digest
 
 import (
 	"context"
-	"sort"
-	"sync"
-	"time"
-
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacblock "github.com/ProtoconNet/mitum2/isaac/block"
@@ -15,48 +12,22 @@ import (
 	"github.com/ProtoconNet/mitum2/util/logging"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"sort"
+	"sync"
+	"time"
 )
-
-type DigestError struct {
-	err    error
-	height base.Height
-}
-
-func NewDigestError(err error, height base.Height) DigestError {
-	if err == nil {
-		return DigestError{height: height}
-	}
-
-	return DigestError{err: err, height: height}
-}
-
-func (de DigestError) Error() string {
-	if de.err == nil {
-		return ""
-	}
-
-	return de.err.Error()
-}
-
-func (de DigestError) Height() base.Height {
-	return de.height
-}
-
-func (de DigestError) IsError() bool {
-	return de.err != nil
-}
 
 type Digester struct {
 	sync.RWMutex
 	*util.ContextDaemon
 	*logging.Logging
-	database    *Database
+	database    *currencydigest.Database
 	localfsRoot string
 	blockChan   chan base.BlockMap
 	errChan     chan error
 }
 
-func NewDigester(st *Database, root string, errChan chan error) *Digester {
+func NewDigester(st *currencydigest.Database, root string, errChan chan error) *Digester {
 	di := &Digester{
 		Logging: logging.NewLogging(func(c zerolog.Context) zerolog.Context {
 			return c.Str("module", "digester")
@@ -73,7 +44,7 @@ func NewDigester(st *Database, root string, errChan chan error) *Digester {
 }
 
 func (di *Digester) start(ctx context.Context) error {
-	errch := func(err DigestError) {
+	errch := func(err currencydigest.DigestError) {
 		if di.errChan == nil {
 			return
 		}
@@ -91,7 +62,7 @@ end:
 		case blk := <-di.blockChan:
 			err := util.Retry(ctx, func() (bool, error) {
 				if err := di.digest(ctx, blk); err != nil {
-					go errch(NewDigestError(err, blk.Manifest().Height()))
+					go errch(currencydigest.NewDigestError(err, blk.Manifest().Height()))
 
 					if errors.Is(err, context.Canceled) {
 						return false, isaac.ErrStopProcessingRetry.Wrap(err)
@@ -108,7 +79,7 @@ end:
 				di.Log().Info().Int64("block", blk.Manifest().Height().Int64()).Msg("block digested")
 			}
 
-			go errch(NewDigestError(err, blk.Manifest().Height()))
+			go errch(currencydigest.NewDigestError(err, blk.Manifest().Height()))
 		}
 	}
 
@@ -131,7 +102,7 @@ func (di *Digester) Digest(blocks []base.BlockMap) {
 func (di *Digester) digest(ctx context.Context, blk base.BlockMap) error {
 	di.Lock()
 	defer di.Unlock()
-	reader, err := isaacblock.NewLocalFSReaderFromHeight(di.localfsRoot, blk.Manifest().Height(), di.database.database.Encoders().Find(jsonenc.JSONEncoderHint))
+	reader, err := isaacblock.NewLocalFSReaderFromHeight(di.localfsRoot, blk.Manifest().Height(), di.database.DatabaseEncoders().Find(jsonenc.JSONEncoderHint))
 	if err != nil {
 		return err
 	}
@@ -164,7 +135,7 @@ func (di *Digester) digest(ctx context.Context, blk base.BlockMap) error {
 	return di.database.SetLastBlock(blk.Manifest().Height())
 }
 
-func DigestBlock(ctx context.Context, st *Database, blk base.BlockMap, ops []base.Operation, opstree fixedtree.Tree, sts []base.State) error {
+func DigestBlock(ctx context.Context, st *currencydigest.Database, blk base.BlockMap, ops []base.Operation, opstree fixedtree.Tree, sts []base.State) error {
 	bs, err := NewBlockSession(st, blk, ops, opstree, sts)
 	if err != nil {
 		return err
