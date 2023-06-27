@@ -28,7 +28,7 @@ var (
 )
 
 func init() {
-	if b, err := Marshal(currencydigest.UnknownProblem); err != nil {
+	if b, err := currencydigest.JSON.Marshal(currencydigest.UnknownProblem); err != nil {
 		panic(err)
 	} else {
 		currencydigest.UnknownProblemJSON = b

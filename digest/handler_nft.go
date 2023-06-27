@@ -131,13 +131,13 @@ func (hd *Handlers) buildNFTCollectionHal(contract, collection string, design ty
 }
 
 func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
-	limit := parseLimitQuery(r.URL.Query().Get("limit"))
-	offset := parseStringQuery(r.URL.Query().Get("offset"))
-	reverse := parseBoolQuery(r.URL.Query().Get("reverse"))
+	limit := currencydigest.ParseLimitQuery(r.URL.Query().Get("limit"))
+	offset := currencydigest.ParseStringQuery(r.URL.Query().Get("offset"))
+	reverse := currencydigest.ParseBoolQuery(r.URL.Query().Get("reverse"))
 
 	cachekey := currencydigest.CacheKey(
-		r.URL.Path, stringOffsetQuery(offset),
-		stringBoolQuery("reverse", reverse),
+		r.URL.Path, currencydigest.StringOffsetQuery(offset),
+		currencydigest.StringBoolQuery("reverse", reverse),
 	)
 
 	contract, err, status := parseRequest(w, r, "contract")
@@ -252,10 +252,10 @@ func (hd *Handlers) buildCollectionNFTsHal(
 
 	self := baseSelf
 	if len(offset) > 0 {
-		self = addQueryValue(baseSelf, stringOffsetQuery(offset))
+		self = currencydigest.AddQueryValue(baseSelf, currencydigest.StringOffsetQuery(offset))
 	}
 	if reverse {
-		self = addQueryValue(baseSelf, stringBoolQuery("reverse", reverse))
+		self = currencydigest.AddQueryValue(baseSelf, currencydigest.StringBoolQuery("reverse", reverse))
 	}
 
 	var hal currencydigest.Hal
@@ -276,16 +276,16 @@ func (hd *Handlers) buildCollectionNFTsHal(
 
 	if len(nextoffset) > 0 {
 		next := baseSelf
-		next = addQueryValue(next, stringOffsetQuery(nextoffset))
+		next = currencydigest.AddQueryValue(next, currencydigest.StringOffsetQuery(nextoffset))
 
 		if reverse {
-			next = addQueryValue(next, stringBoolQuery("reverse", reverse))
+			next = currencydigest.AddQueryValue(next, currencydigest.StringBoolQuery("reverse", reverse))
 		}
 
 		hal = hal.AddLink("next", currencydigest.NewHalLink(next, nil))
 	}
 
-	hal = hal.AddLink("reverse", currencydigest.NewHalLink(addQueryValue(baseSelf, stringBoolQuery("reverse", !reverse)), nil))
+	hal = hal.AddLink("reverse", currencydigest.NewHalLink(currencydigest.AddQueryValue(baseSelf, currencydigest.StringBoolQuery("reverse", !reverse)), nil))
 
 	return hal, nil
 }
