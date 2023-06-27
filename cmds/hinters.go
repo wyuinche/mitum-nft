@@ -25,13 +25,28 @@ var hinters = []encoder.DecodeDetail{
 	// revive:disable-next-line:line-length-limit
 	{Hint: common.BaseStateHint, Instance: common.BaseState{}},
 	{Hint: common.NodeHint, Instance: common.BaseNode{}},
+
 	{Hint: currencytypes.AddressHint, Instance: currencytypes.Address{}},
 	{Hint: currencytypes.AmountHint, Instance: currencytypes.Amount{}},
 	{Hint: currencytypes.AccountHint, Instance: currencytypes.Account{}},
-	{Hint: statecurrency.AccountStateValueHint, Instance: statecurrency.AccountStateValue{}},
-	{Hint: statecurrency.BalanceStateValueHint, Instance: statecurrency.BalanceStateValue{}},
 	{Hint: currencytypes.AccountKeysHint, Instance: currencytypes.BaseAccountKeys{}},
 	{Hint: currencytypes.AccountKeyHint, Instance: currencytypes.BaseAccountKey{}},
+	{Hint: currencytypes.ContractAccountKeysHint, Instance: currencytypes.ContractAccountKeys{}},
+	{Hint: currencytypes.NilFeeerHint, Instance: currencytypes.NilFeeer{}},
+	{Hint: currencytypes.FixedFeeerHint, Instance: currencytypes.FixedFeeer{}},
+	{Hint: currencytypes.RatioFeeerHint, Instance: currencytypes.RatioFeeer{}},
+	{Hint: currencytypes.CurrencyPolicyHint, Instance: currencytypes.CurrencyPolicy{}},
+	{Hint: currencytypes.CurrencyDesignHint, Instance: currencytypes.CurrencyDesign{}},
+
+	{Hint: types.SignerHint, Instance: types.Signer{}},
+	{Hint: types.SignersHint, Instance: types.Signers{}},
+	{Hint: types.NFTHint, Instance: types.NFT{}},
+	{Hint: types.DesignHint, Instance: types.Design{}},
+	{Hint: types.OperatorsBookHint, Instance: types.OperatorsBook{}},
+	{Hint: types.CollectionPolicyHint, Instance: types.CollectionPolicy{}},
+	{Hint: types.CollectionDesignHint, Instance: types.CollectionDesign{}},
+	{Hint: types.NFTBoxHint, Instance: types.NFTBox{}},
+
 	{Hint: currency.CreateAccountsItemMultiAmountsHint, Instance: currency.CreateAccountsItemMultiAmounts{}},
 	{Hint: currency.CreateAccountsItemSingleAmountHint, Instance: currency.CreateAccountsItemSingleAmount{}},
 	{Hint: currency.CreateAccountsHint, Instance: currency.CreateAccounts{}},
@@ -40,29 +55,17 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: currency.TransfersItemSingleAmountHint, Instance: currency.TransfersItemSingleAmount{}},
 	{Hint: currency.TransfersHint, Instance: currency.Transfers{}},
 	{Hint: currency.SuffrageInflationHint, Instance: currency.SuffrageInflation{}},
-
-	{Hint: currencytypes.NilFeeerHint, Instance: currencytypes.NilFeeer{}},
-	{Hint: currencytypes.FixedFeeerHint, Instance: currencytypes.FixedFeeer{}},
-	{Hint: currencytypes.RatioFeeerHint, Instance: currencytypes.RatioFeeer{}},
-	{Hint: currencytypes.CurrencyPolicyHint, Instance: currencytypes.CurrencyPolicy{}},
-	{Hint: currencytypes.CurrencyDesignHint, Instance: currencytypes.CurrencyDesign{}},
-	{Hint: statecurrency.CurrencyDesignStateValueHint, Instance: statecurrency.CurrencyDesignStateValue{}},
 	{Hint: currency.CurrencyRegisterHint, Instance: currency.CurrencyRegister{}},
 	{Hint: currency.CurrencyPolicyUpdaterHint, Instance: currency.CurrencyPolicyUpdater{}},
-	{Hint: currencytypes.ContractAccountKeysHint, Instance: currencytypes.ContractAccountKeys{}},
-	{Hint: stateextension.ContractAccountStateValueHint, Instance: stateextension.ContractAccountStateValue{}},
+	{Hint: currency.GenesisCurrenciesHint, Instance: currency.GenesisCurrencies{}},
+	{Hint: currency.GenesisCurrenciesFactHint, Instance: currency.GenesisCurrenciesFact{}},
+
 	{Hint: extension.CreateContractAccountsItemMultiAmountsHint, Instance: extension.CreateContractAccountsItemMultiAmounts{}},
 	{Hint: extension.CreateContractAccountsItemSingleAmountHint, Instance: extension.CreateContractAccountsItemSingleAmount{}},
 	{Hint: extension.CreateContractAccountsHint, Instance: extension.CreateContractAccounts{}},
 	{Hint: extension.WithdrawsItemMultiAmountsHint, Instance: extension.WithdrawsItemMultiAmounts{}},
 	{Hint: extension.WithdrawsItemSingleAmountHint, Instance: extension.WithdrawsItemSingleAmount{}},
 	{Hint: extension.WithdrawsHint, Instance: extension.Withdraws{}},
-	{Hint: currency.GenesisCurrenciesHint, Instance: currency.GenesisCurrencies{}},
-	{Hint: currency.GenesisCurrenciesFactHint, Instance: currency.GenesisCurrenciesFact{}},
-
-	{Hint: digestisaac.ManifestHint, Instance: digestisaac.Manifest{}},
-	{Hint: currencydigest.AccountValueHint, Instance: currencydigest.AccountValue{}},
-	{Hint: currencydigest.OperationValueHint, Instance: currencydigest.OperationValue{}},
 
 	{Hint: operationisaac.NetworkPolicyHint, Instance: operationisaac.NetworkPolicy{}},
 	{Hint: operationisaac.NetworkPolicyStateValueHint, Instance: operationisaac.NetworkPolicyStateValue{}},
@@ -74,20 +77,6 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: operationisaac.FixedSuffrageCandidateLimiterRuleHint, Instance: operationisaac.FixedSuffrageCandidateLimiterRule{}},
 	{Hint: operationisaac.MajoritySuffrageCandidateLimiterRuleHint, Instance: operationisaac.MajoritySuffrageCandidateLimiterRule{}},
 
-	{Hint: types.SignerHint, Instance: types.Signer{}},
-	{Hint: types.SignersHint, Instance: types.Signers{}},
-	{Hint: types.NFTHint, Instance: types.NFT{}},
-	{Hint: types.DesignHint, Instance: types.Design{}},
-
-	{Hint: state.LastNFTIndexStateValueHint, Instance: state.LastNFTIndexStateValue{}},
-	{Hint: state.NFTStateValueHint, Instance: state.NFTStateValue{}},
-	{Hint: state.NFTBoxStateValueHint, Instance: state.NFTBoxStateValue{}},
-	{Hint: types.NFTBoxHint, Instance: types.NFTBox{}},
-	{Hint: state.OperatorsBookStateValueHint, Instance: state.OperatorsBookStateValue{}},
-	{Hint: types.OperatorsBookHint, Instance: types.OperatorsBook{}},
-	{Hint: types.CollectionPolicyHint, Instance: types.CollectionPolicy{}},
-	{Hint: types.CollectionDesignHint, Instance: types.CollectionDesign{}},
-	{Hint: state.CollectionStateValueHint, Instance: state.CollectionStateValue{}},
 	{Hint: nft.CollectionRegisterHint, Instance: nft.CollectionRegister{}},
 	{Hint: nft.CollectionPolicyUpdaterHint, Instance: nft.CollectionPolicyUpdater{}},
 	{Hint: nft.MintItemHint, Instance: nft.MintItem{}},
@@ -100,6 +89,21 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: nft.ApproveHint, Instance: nft.Approve{}},
 	{Hint: nft.NFTSignItemHint, Instance: nft.NFTSignItem{}},
 	{Hint: nft.NFTSignHint, Instance: nft.NFTSign{}},
+
+	{Hint: state.LastNFTIndexStateValueHint, Instance: state.LastNFTIndexStateValue{}},
+	{Hint: state.NFTStateValueHint, Instance: state.NFTStateValue{}},
+	{Hint: state.NFTBoxStateValueHint, Instance: state.NFTBoxStateValue{}},
+	{Hint: state.OperatorsBookStateValueHint, Instance: state.OperatorsBookStateValue{}},
+	{Hint: state.CollectionStateValueHint, Instance: state.CollectionStateValue{}},
+
+	{Hint: statecurrency.AccountStateValueHint, Instance: statecurrency.AccountStateValue{}},
+	{Hint: statecurrency.BalanceStateValueHint, Instance: statecurrency.BalanceStateValue{}},
+	{Hint: statecurrency.CurrencyDesignStateValueHint, Instance: statecurrency.CurrencyDesignStateValue{}},
+	{Hint: stateextension.ContractAccountStateValueHint, Instance: stateextension.ContractAccountStateValue{}},
+
+	{Hint: digestisaac.ManifestHint, Instance: digestisaac.Manifest{}},
+	{Hint: currencydigest.AccountValueHint, Instance: currencydigest.AccountValue{}},
+	{Hint: currencydigest.OperationValueHint, Instance: currencydigest.OperationValue{}},
 }
 
 var supportedProposalOperationFactHinters = []encoder.DecodeDetail{
@@ -107,9 +111,9 @@ var supportedProposalOperationFactHinters = []encoder.DecodeDetail{
 	{Hint: currency.KeyUpdaterFactHint, Instance: currency.KeyUpdaterFact{}},
 	{Hint: currency.TransfersFactHint, Instance: currency.TransfersFact{}},
 	{Hint: currency.SuffrageInflationFactHint, Instance: currency.SuffrageInflationFact{}},
-
 	{Hint: currency.CurrencyRegisterFactHint, Instance: currency.CurrencyRegisterFact{}},
 	{Hint: currency.CurrencyPolicyUpdaterFactHint, Instance: currency.CurrencyPolicyUpdaterFact{}},
+
 	{Hint: extension.CreateContractAccountsFactHint, Instance: extension.CreateContractAccountsFact{}},
 	{Hint: extension.WithdrawsFactHint, Instance: extension.WithdrawsFact{}},
 
