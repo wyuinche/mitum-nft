@@ -9,29 +9,23 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/ProtoconNet/mitum-currency/v3/cmds"
 	mitumbase "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 )
 
 type ApproveCommand struct {
 	BaseCommand
-	cmds.OperationFlags
-	Sender     cmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   cmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string              `arg:"" name:"collection" help:"collection id" required:"true"`
-	Approved   cmds.AddressFlag    `arg:"" name:"approved" help:"approved account address" required:"true"`
-	NFTidx     uint64              `arg:"" name:"nft" help:"target nft idx to approve"`
-	Currency   cmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	currencycmds.OperationFlags
+	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
+	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
+	Approved   currencycmds.AddressFlag    `arg:"" name:"approved" help:"approved account address" required:"true"`
+	NFTidx     uint64                      `arg:"" name:"nft" help:"target nft idx to approve"`
+	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
 	sender     mitumbase.Address
 	contract   mitumbase.Address
 	collection types.ContractID
 	approved   mitumbase.Address
-}
-
-func NewApproveCommand() ApproveCommand {
-	cmd := NewBaseCommand()
-	return ApproveCommand{BaseCommand: *cmd}
 }
 
 func (cmd *ApproveCommand) Run(pctx context.Context) error { // nolint:dupl
