@@ -80,7 +80,7 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 		PreAddOK(ps.Name("when-new-block-confirmed-func"), cmd.pWhenNewBlockConfirmed)
 	_ = pps.POK(launch.PNameStates).
 		PreAddOK(launch.PNameOperationProcessorsMap, POperationProcessorsMap)
-	_ = pps.POK(PNameDigest).
+	_ = pps.POK(currencycmds.PNameDigest).
 		PostAddOK(currencycmds.PNameDigestAPIHandlers, cmd.pDigestAPIHandlers)
 	_ = pps.POK(currencycmds.PNameDigester).
 		PostAddOK(currencycmds.PNameDigesterFollowUp, PDigesterFollowUp)
@@ -354,21 +354,21 @@ func (cmd *RunCommand) pDigestAPIHandlers(ctx context.Context) (context.Context,
 	}
 	router := dnt.Router()
 
+	defaultHandlers, err := cmd.setDigestDefaultHandlers(ctx, isaacparams, cache, router)
+	if err != nil {
+		return ctx, err
+	}
+
+	if err := defaultHandlers.Initialize(); err != nil {
+		return ctx, err
+	}
+
 	handlers, err := cmd.setDigestHandlers(ctx, isaacparams, cache, router)
 	if err != nil {
 		return ctx, err
 	}
 
 	if err := handlers.Initialize(); err != nil {
-		return ctx, err
-	}
-
-	handlers2, err := cmd.setDigestNftHandlers(ctx, isaacparams, cache, router)
-	if err != nil {
-		return ctx, err
-	}
-
-	if err := handlers2.Initialize(); err != nil {
 		return ctx, err
 	}
 
@@ -386,7 +386,7 @@ func (cmd *RunCommand) loadCache(_ context.Context, design currencycmds.DigestDe
 	return c, nil
 }
 
-func (cmd *RunCommand) setDigestHandlers(
+func (cmd *RunCommand) setDigestDefaultHandlers(
 	ctx context.Context,
 	params *isaac.Params,
 	cache currencydigest.Cache,
@@ -408,7 +408,7 @@ func (cmd *RunCommand) setDigestHandlers(
 	return handlers, nil
 }
 
-func (cmd *RunCommand) setDigestNftHandlers(
+func (cmd *RunCommand) setDigestHandlers(
 	ctx context.Context,
 	params *isaac.Params,
 	cache currencydigest.Cache,

@@ -6,12 +6,6 @@ import (
 	"github.com/ProtoconNet/mitum2/util/ps"
 )
 
-var (
-	PNameDigest           = ps.Name("digest")
-	PNameDigestStart      = ps.Name("digest_star")
-	PNameMongoDBsDataBase = ps.Name("mongodb_database")
-)
-
 func DefaultRunPS() *ps.PS {
 	pps := ps.NewPS("cmd-run")
 
@@ -39,11 +33,11 @@ func DefaultRunPS() *ps.PS {
 			launch.PNameStartMemberlist,
 			launch.PNameStartNetwork,
 			launch.PNameStates).
-		AddOK(PNameMongoDBsDataBase, currencycmds.ProcessDatabase, nil, currencycmds.PNameDigestDesign, launch.PNameStorage).
-		AddOK(currencycmds.PNameDigester, ProcessDigester, nil, PNameMongoDBsDataBase).
-		AddOK(PNameDigest, currencycmds.ProcessDigestAPI, nil, currencycmds.PNameDigestDesign, PNameMongoDBsDataBase, launch.PNameMemberlist).
-		AddOK(PNameDigestStart, currencycmds.ProcessStartDigestAPI, nil, PNameDigest).
-		AddOK(currencycmds.PNameStartDigester, ProcessStartDigester, nil, PNameDigestStart)
+		AddOK(currencycmds.PNameMongoDBsDataBase, currencycmds.ProcessDatabase, nil, currencycmds.PNameDigestDesign, launch.PNameStorage).
+		AddOK(currencycmds.PNameDigester, ProcessDigester, nil, currencycmds.PNameMongoDBsDataBase).
+		AddOK(currencycmds.PNameDigest, currencycmds.ProcessDigestAPI, nil, currencycmds.PNameDigestDesign, currencycmds.PNameMongoDBsDataBase, launch.PNameMemberlist).
+		AddOK(currencycmds.PNameDigestStart, currencycmds.ProcessStartDigestAPI, nil, currencycmds.PNameDigest).
+		AddOK(currencycmds.PNameStartDigester, ProcessStartDigester, nil, currencycmds.PNameDigestStart)
 
 	_ = pps.POK(launch.PNameEncoder).
 		PostAddOK(launch.PNameAddHinters, PAddHinters)

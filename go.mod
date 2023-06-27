@@ -3,12 +3,11 @@ module github.com/ProtoconNet/mitum-nft/v2
 go 1.19
 
 require (
-	github.com/ProtoconNet/mitum-currency/v3 v3.0.0-alpha.0.20230626014145-678e04c1291a
+	github.com/ProtoconNet/mitum-currency/v3 v3.0.0-alpha.0.20230627031340-81e701ca8180
 	github.com/ProtoconNet/mitum2 v0.0.0-20230621062736-ad0a8b8967c7
 	github.com/alecthomas/kong v0.7.1
 	github.com/arl/statsviz v0.5.2
 	github.com/gorilla/mux v1.8.0
-	github.com/json-iterator/go v1.1.12
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.0
 	go.mongodb.org/mongo-driver v1.11.0
@@ -60,6 +59,7 @@ require (
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hashicorp/vault/api v1.9.0 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/justinas/alice v1.2.0 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
