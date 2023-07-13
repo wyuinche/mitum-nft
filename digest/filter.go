@@ -13,12 +13,12 @@ import (
 func parseRequest(w http.ResponseWriter, r *http.Request, v string) (string, error, int) {
 	s, found := mux.Vars(r)[v]
 	if !found {
-		return "", errors.Errorf("empty collection id"), http.StatusNotFound
+		return "", errors.Errorf("empty %s", v), http.StatusNotFound
 	}
 
 	s = strings.TrimSpace(s)
 	if len(s) < 1 {
-		return "", errors.Errorf("empty collection id"), http.StatusBadRequest
+		return "", errors.Errorf("empty %s", v), http.StatusBadRequest
 	}
 	return s, nil, http.StatusOK
 }
@@ -68,10 +68,12 @@ func buildNFTsFilterByCollection(contract, col string, offset string, reverse bo
 	filterA := bson.A{}
 
 	// filter fot matching collection
+	filterContract := bson.D{{"contract", bson.D{{"$in", []string{contract}}}}}
 	filterSymbol := bson.D{{"collection", bson.D{{"$in", []string{col}}}}}
 	filterToken := bson.D{{"istoken", true}}
 	filterA = append(filterA, filterToken)
 	filterA = append(filterA, filterSymbol)
+	filterA = append(filterA, filterContract)
 
 	// if offset exist, apply offset
 	if len(offset) > 0 {

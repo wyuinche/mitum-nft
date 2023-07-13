@@ -6,8 +6,6 @@ import (
 	"github.com/ProtoconNet/mitum-nft/v2/types"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	mitumbase "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -290,9 +288,9 @@ func StateOperatorsBookValue(st mitumbase.State) (*types.OperatorsBook, error) {
 // The length of state key is 4 or 5.
 // In case of length 4 it forms as NFTPrefix:{contract}:{collection}:{Suffix}.
 // In case of length 5 it forms as NFTPrefix:{contract}:{collection}:{key_value}:{Suffix}
-func ParseStateKey(key string) ([]string, error) {
+func ParseStateKey(key string, Prefix string) ([]string, error) {
 	parsedKey := strings.Split(key, ":")
-	if parsedKey[0] != NFTPrefix[:len(NFTPrefix)-1] {
+	if parsedKey[0] != Prefix[:len(Prefix)-1] {
 		return nil, errors.Errorf("State Key not include NFTPrefix, %s", parsedKey)
 	}
 	if len(parsedKey) < 3 {
@@ -300,142 +298,4 @@ func ParseStateKey(key string) ([]string, error) {
 	} else {
 		return parsedKey, nil
 	}
-}
-
-func checkExistsState(
-	key string,
-	getState mitumbase.GetStateFunc,
-) error {
-	switch _, found, err := getState(key); {
-	case err != nil:
-		return err
-	case !found:
-		return mitumbase.NewBaseOperationProcessReasonError("state, %q does not exist", key)
-	default:
-		return nil
-	}
-}
-
-func checkExistsStates(
-	keys []string,
-	getState mitumbase.GetStateFunc,
-) error {
-	for i := range keys {
-		switch _, found, err := getState(keys[i]); {
-		case err != nil:
-			return err
-		case !found:
-			return mitumbase.NewBaseOperationProcessReasonError("state, %q does not exist", keys[i])
-		}
-	}
-	return nil
-}
-
-func checkNotExistsState(
-	key string,
-	getState mitumbase.GetStateFunc,
-) error {
-	switch _, found, err := getState(key); {
-	case err != nil:
-		return err
-	case found:
-		return mitumbase.NewBaseOperationProcessReasonError("state, %q already exists", key)
-	default:
-		return nil
-	}
-}
-
-func existsState(
-	k,
-	name string,
-	getState mitumbase.GetStateFunc,
-) (mitumbase.State, error) {
-	switch st, found, err := getState(k); {
-	case err != nil:
-		return nil, err
-	case !found:
-		return nil, mitumbase.NewBaseOperationProcessReasonError("%s does not exist", name)
-	default:
-		return st, nil
-	}
-}
-
-func existsStates(
-	getState mitumbase.GetStateFunc,
-	keys ...string,
-) ([]mitumbase.State, error) {
-	var states []mitumbase.State
-	for i := range keys {
-		switch st, found, err := getState(keys[i]); {
-		case err != nil:
-			return nil, err
-		case !found:
-			return nil, mitumbase.NewBaseOperationProcessReasonError("value of key does not exist, %s", keys[i])
-		default:
-			states = append(states, st)
-		}
-	}
-	if len(keys) != len(states) {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("get multiple states failed")
-	}
-	return states, nil
-}
-
-func notExistsState(
-	k,
-	name string,
-	getState mitumbase.GetStateFunc,
-) (mitumbase.State, error) {
-	var st mitumbase.State
-	switch _, found, err := getState(k); {
-	case err != nil:
-		return nil, err
-	case found:
-		return nil, mitumbase.NewBaseOperationProcessReasonError("%s already exists", name)
-	case !found:
-		st = mitumbase.NewBaseState(mitumbase.NilHeight, k, nil, nil, nil)
-	}
-	return st, nil
-}
-
-func existsCurrencyPolicy(cid currencytypes.CurrencyID, getStateFunc mitumbase.GetStateFunc) (currencytypes.CurrencyPolicy, error) {
-	var policy currencytypes.CurrencyPolicy
-
-	switch st, found, err := getStateFunc(statecurrency.StateKeyCurrencyDesign(cid)); {
-	case err != nil:
-		return currencytypes.CurrencyPolicy{}, err
-	case !found:
-		return currencytypes.CurrencyPolicy{}, errors.Errorf("currency not found, %v", cid)
-	default:
-		design, ok := st.Value().(statecurrency.CurrencyDesignStateValue) //nolint:forcetypeassert //...
-		if !ok {
-			return currencytypes.CurrencyPolicy{}, errors.Errorf("expected CurrencyDesignStateValue, not %T", st.Value())
-		}
-		policy = design.CurrencyDesign.Policy()
-	}
-
-	return policy, nil
-}
-
-func existsCollectionPolicy(contract mitumbase.Address, id currencytypes.ContractID, getStateFunc mitumbase.GetStateFunc) (types.CollectionPolicy, error) {
-	var policy types.CollectionPolicy
-
-	switch st, found, err := getStateFunc(NFTStateKey(contract, id, CollectionKey)); {
-	case err != nil:
-		return types.CollectionPolicy{}, err
-	case !found:
-		return types.CollectionPolicy{}, errors.Errorf("collection not found, %v", id)
-	default:
-		design, ok := st.Value().(CollectionStateValue)
-		if !ok {
-			return types.CollectionPolicy{}, errors.Errorf("expected CollectionDesignStateValue, not %T", st.Value())
-		}
-		p := design.Design.Policy()
-		policy, ok = p.(types.CollectionPolicy)
-		if !ok {
-			return types.CollectionPolicy{}, errors.Errorf("expected CollectionPolicy, not %T", p)
-		}
-	}
-
-	return policy, nil
 }

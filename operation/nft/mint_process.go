@@ -30,7 +30,7 @@ var mintProcessorPool = sync.Pool{
 }
 
 func (Mint) Process(
-	ctx context.Context, getStateFunc base.GetStateFunc,
+	_ context.Context, _ base.GetStateFunc,
 ) ([]base.StateMergeValue, base.OperationProcessReasonError, error) {
 	return nil, nil, nil
 }
@@ -44,7 +44,7 @@ type MintItemProcessor struct {
 }
 
 func (ipp *MintItemProcessor) PreProcess(
-	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
+	_ context.Context, _ base.Operation, getStateFunc base.GetStateFunc,
 ) error {
 	if err := state.CheckNotExistsState(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, ipp.idx), getStateFunc); err != nil {
 		return errors.Errorf("nft already exists, %q: %w", ipp.idx, err)
@@ -70,7 +70,7 @@ func (ipp *MintItemProcessor) PreProcess(
 }
 
 func (ipp *MintItemProcessor) Process(
-	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
+	_ context.Context, _ base.Operation, _ base.GetStateFunc,
 ) ([]base.StateMergeValue, error) {
 	sts := make([]base.StateMergeValue, 1)
 
@@ -79,7 +79,7 @@ func (ipp *MintItemProcessor) Process(
 		return nil, errors.Errorf("invalid nft, %q: %w", ipp.idx, err)
 	}
 
-	sts[0] = statenft.NewStateMergeValue(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, ipp.idx), statenft.NewNFTStateValue(n))
+	sts[0] = state.NewStateMergeValue(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, ipp.idx), statenft.NewNFTStateValue(n))
 
 	if err := ipp.box.Append(n.ID()); err != nil {
 		return nil, errors.Errorf("failed to append nft id to nft box, %q: %w", n.ID(), err)
@@ -288,7 +288,6 @@ func (opp *MintProcessor) Process( // nolint:dupl
 
 			switch st, found, err := getStateFunc(nftsKey); {
 			case err != nil:
-
 				return nil, base.NewBaseOperationProcessReasonError("failed to get nft box state, %q: %w", collection, err), nil
 			case !found:
 				box = types.NewNFTBox(nil)
@@ -334,12 +333,12 @@ func (opp *MintProcessor) Process( // nolint:dupl
 	}
 
 	for key, idx := range idxes {
-		iv := statenft.NewStateMergeValue(key, statenft.NewLastNFTIndexStateValue(idx))
+		iv := state.NewStateMergeValue(key, statenft.NewLastNFTIndexStateValue(idx))
 		sts = append(sts, iv)
 	}
 
 	for key, box := range boxes {
-		bv := statenft.NewStateMergeValue(key, statenft.NewNFTBoxStateValue(*box))
+		bv := state.NewStateMergeValue(key, statenft.NewNFTBoxStateValue(*box))
 		sts = append(sts, bv)
 	}
 

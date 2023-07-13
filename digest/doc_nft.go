@@ -85,7 +85,7 @@ func (doc NFTDoc) MarshalBSON() ([]byte, error) {
 		return nil, err
 	}
 
-	parsedKey, err := state.ParseStateKey(doc.st.Key())
+	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (doc NFTOperatorDoc) MarshalBSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	parsedKey, err := state.ParseStateKey(doc.st.Key())
+	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (doc NFTBoxDoc) MarshalBSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	parsedKey, err := state.ParseStateKey(doc.st.Key())
+	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (doc NFTLastIndexDoc) MarshalBSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	parsedKey, err := state.ParseStateKey(doc.st.Key())
+	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
 	if err != nil {
 		return nil, err
 	}

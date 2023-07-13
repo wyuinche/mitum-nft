@@ -4,15 +4,14 @@ import (
 	"context"
 	"sync"
 
-	statenft "github.com/ProtoconNet/mitum-nft/v2/state"
-	"github.com/ProtoconNet/mitum-nft/v2/types"
-
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/state"
 	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
+	statenft "github.com/ProtoconNet/mitum-nft/v2/state"
+	"github.com/ProtoconNet/mitum-nft/v2/types"
 	mitumbase "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"

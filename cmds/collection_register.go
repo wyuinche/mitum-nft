@@ -2,13 +2,12 @@ package cmds
 
 import (
 	"context"
+	"fmt"
 
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-
-	"github.com/ProtoconNet/mitum-currency/v3/cmds"
 	mitumbase "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
@@ -16,15 +15,15 @@ import (
 
 type CollectionRegisterCommand struct {
 	BaseCommand
-	cmds.OperationFlags
-	Sender     cmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   cmds.AddressFlag    `arg:"" name:"contract" help:"contract account to register policy" required:"true"`
-	Collection string              `arg:"" name:"collection" help:"collection id" required:"true"`
-	Name       string              `arg:"" name:"name" help:"collection name" required:"true"`
-	Royalty    uint                `arg:"" name:"royalty" help:"royalty parameter; 0 <= royalty param < 100" required:"true"`
-	Currency   cmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	URI        string              `name:"uri" help:"collection uri" optional:""`
-	White      cmds.AddressFlag    `name:"white" help:"whitelisted address" optional:""`
+	currencycmds.OperationFlags
+	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract account to register policy" required:"true"`
+	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
+	Name       string                      `arg:"" name:"name" help:"collection name" required:"true"`
+	Royalty    uint                        `arg:"" name:"royalty" help:"royalty parameter; 0 <= royalty param < 100" required:"true"`
+	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	URI        string                      `name:"uri" help:"collection uri" optional:""`
+	White      currencycmds.AddressFlag    `name:"white" help:"whitelisted address" optional:""`
 	sender     mitumbase.Address
 	contract   mitumbase.Address
 	collection currencytypes.ContractID
@@ -55,7 +54,7 @@ func (cmd *CollectionRegisterCommand) Run(pctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
+	fmt.Println(cmd.Out)
 	currencycmds.PrettyPrint(cmd.Out, op)
 
 	return nil

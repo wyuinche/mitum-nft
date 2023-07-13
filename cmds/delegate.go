@@ -2,8 +2,6 @@ package cmds
 
 import (
 	"context"
-
-	"github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
@@ -14,13 +12,13 @@ import (
 
 type DelegateCommand struct {
 	BaseCommand
-	cmds.OperationFlags
-	Sender     cmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   cmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string              `arg:"" name:"collection" help:"collection id" required:"true"`
-	Operator   cmds.AddressFlag    `arg:"" name:"operator" help:"operator account address"`
-	Currency   cmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	Mode       string              `name:"mode" help:"delegate mode" optional:""`
+	currencycmds.OperationFlags
+	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
+	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
+	Operator   currencycmds.AddressFlag    `arg:"" name:"operator" help:"operator account address"`
+	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	Mode       string                      `name:"mode" help:"delegate mode" optional:""`
 	sender     base.Address
 	contract   base.Address
 	collection types.ContractID

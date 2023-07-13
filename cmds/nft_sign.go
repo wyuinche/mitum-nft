@@ -2,25 +2,22 @@ package cmds
 
 import (
 	"context"
-
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
-	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
-	"github.com/pkg/errors"
-
-	"github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
+	"github.com/pkg/errors"
 )
 
 type NFTSignCommand struct {
 	BaseCommand
-	cmds.OperationFlags
-	Sender     cmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   cmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string              `arg:"" name:"collection" help:"collection id" required:"true"`
-	NFT        uint64              `arg:"" name:"nft" help:"target nft; \"<collection>,<idx>\""`
-	Currency   cmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	currencycmds.OperationFlags
+	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
+	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
+	NFT        uint64                      `arg:"" name:"nft" help:"target nft; \"<collection>,<idx>\""`
+	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
 	sender     base.Address
 	contract   base.Address
 	collection types.ContractID

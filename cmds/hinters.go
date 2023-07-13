@@ -1,15 +1,7 @@
 package cmds
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
-	digestisaac "github.com/ProtoconNet/mitum-currency/v3/digest/isaac"
-	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/operation/extension"
-	operationisaac "github.com/ProtoconNet/mitum-currency/v3/operation/isaac"
-	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
-	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
+	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
@@ -21,23 +13,8 @@ import (
 var Hinters []encoder.DecodeDetail
 var SupportedProposalOperationFactHinters []encoder.DecodeDetail
 
-var hinters = []encoder.DecodeDetail{
+var AddedHinters = []encoder.DecodeDetail{
 	// revive:disable-next-line:line-length-limit
-	{Hint: common.BaseStateHint, Instance: common.BaseState{}},
-	{Hint: common.NodeHint, Instance: common.BaseNode{}},
-
-	{Hint: currencytypes.AddressHint, Instance: currencytypes.Address{}},
-	{Hint: currencytypes.AmountHint, Instance: currencytypes.Amount{}},
-	{Hint: currencytypes.AccountHint, Instance: currencytypes.Account{}},
-	{Hint: currencytypes.AccountKeysHint, Instance: currencytypes.BaseAccountKeys{}},
-	{Hint: currencytypes.AccountKeyHint, Instance: currencytypes.BaseAccountKey{}},
-	{Hint: currencytypes.ContractAccountKeysHint, Instance: currencytypes.ContractAccountKeys{}},
-	{Hint: currencytypes.NilFeeerHint, Instance: currencytypes.NilFeeer{}},
-	{Hint: currencytypes.FixedFeeerHint, Instance: currencytypes.FixedFeeer{}},
-	{Hint: currencytypes.RatioFeeerHint, Instance: currencytypes.RatioFeeer{}},
-	{Hint: currencytypes.CurrencyPolicyHint, Instance: currencytypes.CurrencyPolicy{}},
-	{Hint: currencytypes.CurrencyDesignHint, Instance: currencytypes.CurrencyDesign{}},
-
 	{Hint: types.SignerHint, Instance: types.Signer{}},
 	{Hint: types.SignersHint, Instance: types.Signers{}},
 	{Hint: types.NFTHint, Instance: types.NFT{}},
@@ -46,36 +23,6 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: types.CollectionPolicyHint, Instance: types.CollectionPolicy{}},
 	{Hint: types.CollectionDesignHint, Instance: types.CollectionDesign{}},
 	{Hint: types.NFTBoxHint, Instance: types.NFTBox{}},
-
-	{Hint: currency.CreateAccountsItemMultiAmountsHint, Instance: currency.CreateAccountsItemMultiAmounts{}},
-	{Hint: currency.CreateAccountsItemSingleAmountHint, Instance: currency.CreateAccountsItemSingleAmount{}},
-	{Hint: currency.CreateAccountsHint, Instance: currency.CreateAccounts{}},
-	{Hint: currency.KeyUpdaterHint, Instance: currency.KeyUpdater{}},
-	{Hint: currency.TransfersItemMultiAmountsHint, Instance: currency.TransfersItemMultiAmounts{}},
-	{Hint: currency.TransfersItemSingleAmountHint, Instance: currency.TransfersItemSingleAmount{}},
-	{Hint: currency.TransfersHint, Instance: currency.Transfers{}},
-	{Hint: currency.SuffrageInflationHint, Instance: currency.SuffrageInflation{}},
-	{Hint: currency.CurrencyRegisterHint, Instance: currency.CurrencyRegister{}},
-	{Hint: currency.CurrencyPolicyUpdaterHint, Instance: currency.CurrencyPolicyUpdater{}},
-	{Hint: currency.GenesisCurrenciesHint, Instance: currency.GenesisCurrencies{}},
-	{Hint: currency.GenesisCurrenciesFactHint, Instance: currency.GenesisCurrenciesFact{}},
-
-	{Hint: extension.CreateContractAccountsItemMultiAmountsHint, Instance: extension.CreateContractAccountsItemMultiAmounts{}},
-	{Hint: extension.CreateContractAccountsItemSingleAmountHint, Instance: extension.CreateContractAccountsItemSingleAmount{}},
-	{Hint: extension.CreateContractAccountsHint, Instance: extension.CreateContractAccounts{}},
-	{Hint: extension.WithdrawsItemMultiAmountsHint, Instance: extension.WithdrawsItemMultiAmounts{}},
-	{Hint: extension.WithdrawsItemSingleAmountHint, Instance: extension.WithdrawsItemSingleAmount{}},
-	{Hint: extension.WithdrawsHint, Instance: extension.Withdraws{}},
-
-	{Hint: operationisaac.NetworkPolicyHint, Instance: operationisaac.NetworkPolicy{}},
-	{Hint: operationisaac.NetworkPolicyStateValueHint, Instance: operationisaac.NetworkPolicyStateValue{}},
-	{Hint: operationisaac.GenesisNetworkPolicyHint, Instance: operationisaac.GenesisNetworkPolicy{}},
-	{Hint: operationisaac.SuffrageGenesisJoinHint, Instance: operationisaac.SuffrageGenesisJoin{}},
-	{Hint: operationisaac.SuffrageCandidateHint, Instance: operationisaac.SuffrageCandidate{}},
-	{Hint: operationisaac.SuffrageJoinHint, Instance: operationisaac.SuffrageJoin{}},
-	{Hint: operationisaac.SuffrageDisjoinHint, Instance: operationisaac.SuffrageDisjoin{}},
-	{Hint: operationisaac.FixedSuffrageCandidateLimiterRuleHint, Instance: operationisaac.FixedSuffrageCandidateLimiterRule{}},
-	{Hint: operationisaac.MajoritySuffrageCandidateLimiterRuleHint, Instance: operationisaac.MajoritySuffrageCandidateLimiterRule{}},
 
 	{Hint: nft.CollectionRegisterHint, Instance: nft.CollectionRegister{}},
 	{Hint: nft.CollectionPolicyUpdaterHint, Instance: nft.CollectionPolicyUpdater{}},
@@ -95,34 +42,9 @@ var hinters = []encoder.DecodeDetail{
 	{Hint: state.NFTBoxStateValueHint, Instance: state.NFTBoxStateValue{}},
 	{Hint: state.OperatorsBookStateValueHint, Instance: state.OperatorsBookStateValue{}},
 	{Hint: state.CollectionStateValueHint, Instance: state.CollectionStateValue{}},
-
-	{Hint: statecurrency.AccountStateValueHint, Instance: statecurrency.AccountStateValue{}},
-	{Hint: statecurrency.BalanceStateValueHint, Instance: statecurrency.BalanceStateValue{}},
-	{Hint: statecurrency.CurrencyDesignStateValueHint, Instance: statecurrency.CurrencyDesignStateValue{}},
-	{Hint: stateextension.ContractAccountStateValueHint, Instance: stateextension.ContractAccountStateValue{}},
-
-	{Hint: digestisaac.ManifestHint, Instance: digestisaac.Manifest{}},
-	{Hint: currencydigest.AccountValueHint, Instance: currencydigest.AccountValue{}},
-	{Hint: currencydigest.OperationValueHint, Instance: currencydigest.OperationValue{}},
 }
 
-var supportedProposalOperationFactHinters = []encoder.DecodeDetail{
-	{Hint: currency.CreateAccountsFactHint, Instance: currency.CreateAccountsFact{}},
-	{Hint: currency.KeyUpdaterFactHint, Instance: currency.KeyUpdaterFact{}},
-	{Hint: currency.TransfersFactHint, Instance: currency.TransfersFact{}},
-	{Hint: currency.SuffrageInflationFactHint, Instance: currency.SuffrageInflationFact{}},
-	{Hint: currency.CurrencyRegisterFactHint, Instance: currency.CurrencyRegisterFact{}},
-	{Hint: currency.CurrencyPolicyUpdaterFactHint, Instance: currency.CurrencyPolicyUpdaterFact{}},
-
-	{Hint: extension.CreateContractAccountsFactHint, Instance: extension.CreateContractAccountsFact{}},
-	{Hint: extension.WithdrawsFactHint, Instance: extension.WithdrawsFact{}},
-
-	{Hint: operationisaac.GenesisNetworkPolicyFactHint, Instance: operationisaac.GenesisNetworkPolicyFact{}},
-	{Hint: operationisaac.SuffrageGenesisJoinFactHint, Instance: operationisaac.SuffrageGenesisJoinFact{}},
-	{Hint: operationisaac.SuffrageCandidateFactHint, Instance: operationisaac.SuffrageCandidateFact{}},
-	{Hint: operationisaac.SuffrageJoinFactHint, Instance: operationisaac.SuffrageJoinFact{}},
-	{Hint: operationisaac.SuffrageDisjoinFactHint, Instance: operationisaac.SuffrageDisjoinFact{}},
-
+var AddedSupportedHinters = []encoder.DecodeDetail{
 	{Hint: nft.CollectionRegisterFactHint, Instance: nft.CollectionRegisterFact{}},
 	{Hint: nft.CollectionPolicyUpdaterFactHint, Instance: nft.CollectionPolicyUpdaterFact{}},
 	{Hint: nft.MintFactHint, Instance: nft.MintFact{}},
@@ -133,13 +55,25 @@ var supportedProposalOperationFactHinters = []encoder.DecodeDetail{
 }
 
 func init() {
-	Hinters = make([]encoder.DecodeDetail, len(launch.Hinters)+len(hinters))
-	copy(Hinters, launch.Hinters)
-	copy(Hinters[len(launch.Hinters):], hinters)
+	defaultLen := len(launch.Hinters)
+	currencyExtendedLen := defaultLen + len(currencycmds.AddedHinters)
+	allExtendedLen := currencyExtendedLen + len(AddedHinters)
 
-	SupportedProposalOperationFactHinters = make([]encoder.DecodeDetail, len(launch.SupportedProposalOperationFactHinters)+len(supportedProposalOperationFactHinters))
+	Hinters = make([]encoder.DecodeDetail, allExtendedLen)
+	copy(Hinters, launch.Hinters)
+	copy(Hinters[defaultLen:currencyExtendedLen], currencycmds.AddedHinters)
+	copy(Hinters[currencyExtendedLen:], AddedHinters)
+
+	defaultSupportedLen := len(launch.SupportedProposalOperationFactHinters)
+	currencySupportedExtendedLen := defaultSupportedLen + len(currencycmds.AddedSupportedHinters)
+	allSupportedExtendedLen := currencySupportedExtendedLen + len(AddedSupportedHinters)
+
+	SupportedProposalOperationFactHinters = make(
+		[]encoder.DecodeDetail,
+		allSupportedExtendedLen)
 	copy(SupportedProposalOperationFactHinters, launch.SupportedProposalOperationFactHinters)
-	copy(SupportedProposalOperationFactHinters[len(launch.SupportedProposalOperationFactHinters):], supportedProposalOperationFactHinters)
+	copy(SupportedProposalOperationFactHinters[defaultSupportedLen:currencySupportedExtendedLen], currencycmds.AddedSupportedHinters)
+	copy(SupportedProposalOperationFactHinters[currencySupportedExtendedLen:], AddedSupportedHinters)
 }
 
 func LoadHinters(enc encoder.Encoder) error {

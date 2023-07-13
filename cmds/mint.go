@@ -2,29 +2,26 @@ package cmds
 
 import (
 	"context"
-
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-	"github.com/pkg/errors"
-
-	"github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
+	"github.com/pkg/errors"
 )
 
 type MintCommand struct {
 	BaseCommand
-	cmds.OperationFlags
-	Sender       cmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract     cmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection   string              `arg:"" name:"collection" help:"collection id" required:"true"`
-	Hash         string              `arg:"" name:"hash" help:"nft hash" required:"true"`
-	Uri          string              `arg:"" name:"uri" help:"nft uri" required:"true"`
-	Currency     cmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	Creator      SignerFlag          `name:"creator" help:"nft contents creator \"<address>,<share>\"" optional:""`
-	CreatorTotal uint                `name:"creator-total" help:"creators total share" optional:""`
+	currencycmds.OperationFlags
+	Sender       currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract     currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
+	Collection   string                      `arg:"" name:"collection" help:"collection id" required:"true"`
+	Hash         string                      `arg:"" name:"hash" help:"nft hash" required:"true"`
+	Uri          string                      `arg:"" name:"uri" help:"nft uri" required:"true"`
+	Currency     currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	Creator      SignerFlag                  `name:"creator" help:"nft contents creator \"<address>,<share>\"" optional:""`
+	CreatorTotal uint                        `name:"creator-total" help:"creators total share" optional:""`
 	sender       base.Address
 	contract     base.Address
 	collection   currencytypes.ContractID

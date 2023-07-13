@@ -2,6 +2,12 @@ package cmds
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum-nft/v2/digest"
@@ -19,11 +25,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"net"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 type RunCommand struct { //nolint:govet //...

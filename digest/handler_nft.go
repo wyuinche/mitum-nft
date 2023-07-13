@@ -20,21 +20,18 @@ func (hd *Handlers) handleNFT(w http.ResponseWriter, r *http.Request) {
 	contract, err, status := parseRequest(w, r, "contract")
 	if err != nil {
 		currencydigest.HTTP2ProblemWithError(w, err, status)
-
 		return
 	}
 
 	collection, err, status := parseRequest(w, r, "collection")
 	if err != nil {
 		currencydigest.HTTP2ProblemWithError(w, err, status)
-
 		return
 	}
 
 	id, err, status := parseRequest(w, r, "id")
 	if err != nil {
 		currencydigest.HTTP2ProblemWithError(w, err, status)
-
 		return
 	}
 
@@ -120,7 +117,7 @@ func (hd *Handlers) handleNFTCollectionInGroup(contract, collection string) (int
 }
 
 func (hd *Handlers) buildNFTCollectionHal(contract, collection string, design types.Design) (currencydigest.Hal, error) {
-	h, err := hd.combineURL(HandlerPathNFTs, "contract", contract, "collection", collection)
+	h, err := hd.combineURL(HandlerPathNFTCollection, "contract", contract, "collection", collection)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +227,7 @@ func (hd *Handlers) handleNFTsInGroup(
 		return nil, false, errors.Errorf("nfts not found")
 	}
 
-	i, err := hd.buildCollectionNFTsHal(contract, collection, vas, offset, reverse)
+	i, err := hd.buildNFTsHal(contract, collection, vas, offset, reverse)
 	if err != nil {
 		return nil, false, err
 	}
@@ -239,7 +236,7 @@ func (hd *Handlers) handleNFTsInGroup(
 	return b, int64(len(vas)) == limit, err
 }
 
-func (hd *Handlers) buildCollectionNFTsHal(
+func (hd *Handlers) buildNFTsHal(
 	contract, col string,
 	vas []currencydigest.Hal,
 	offset string,
