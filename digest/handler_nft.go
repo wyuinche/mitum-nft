@@ -40,7 +40,7 @@ func (hd *Handlers) handleNFT(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		currencydigest.HTTP2HandleError(w, err)
 	} else {
-		currencydigest.HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
+		currencydigest.HTTP2WriteHalBytes(hd.encoder, w, v.([]byte), http.StatusOK)
 		if !shared {
 			currencydigest.HTTP2WriteCache(w, cachekey, time.Second*3)
 		}
@@ -56,7 +56,7 @@ func (hd *Handlers) handleNFTInGroup(contract, collection, id string) (interface
 		if err != nil {
 			return nil, err
 		}
-		return hd.enc.Marshal(hal)
+		return hd.encoder.Marshal(hal)
 	}
 }
 
@@ -96,7 +96,7 @@ func (hd *Handlers) handleNFTCollection(w http.ResponseWriter, r *http.Request) 
 	}); err != nil {
 		currencydigest.HTTP2HandleError(w, err)
 	} else {
-		currencydigest.HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
+		currencydigest.HTTP2WriteHalBytes(hd.encoder, w, v.([]byte), http.StatusOK)
 		if !shared {
 			currencydigest.HTTP2WriteCache(w, cachekey, time.Second*3)
 		}
@@ -112,7 +112,7 @@ func (hd *Handlers) handleNFTCollectionInGroup(contract, collection string) (int
 		if err != nil {
 			return nil, err
 		}
-		return hd.enc.Marshal(hal)
+		return hd.encoder.Marshal(hal)
 	}
 }
 
@@ -184,7 +184,7 @@ func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
 		filled = l[1].(bool)
 	}
 
-	currencydigest.HTTP2WriteHalBytes(hd.enc, w, b, http.StatusOK)
+	currencydigest.HTTP2WriteHalBytes(hd.encoder, w, b, http.StatusOK)
 
 	if !shared {
 		expire := hd.expireNotFilled
@@ -232,7 +232,7 @@ func (hd *Handlers) handleNFTsInGroup(
 		return nil, false, err
 	}
 
-	b, err := hd.enc.Marshal(i)
+	b, err := hd.encoder.Marshal(i)
 	return b, int64(len(vas)) == limit, err
 }
 
@@ -319,7 +319,7 @@ func (hd *Handlers) handleNFTOperators(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		currencydigest.HTTP2HandleError(w, err)
 	} else {
-		currencydigest.HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
+		currencydigest.HTTP2WriteHalBytes(hd.encoder, w, v.([]byte), http.StatusOK)
 		if !shared {
 			currencydigest.HTTP2WriteCache(w, cachekey, time.Second*3)
 		}
@@ -335,7 +335,7 @@ func (hd *Handlers) handleNFTOperatorsInGroup(contract, collection, account stri
 		if err != nil {
 			return nil, err
 		}
-		return hd.enc.Marshal(hal)
+		return hd.encoder.Marshal(hal)
 	}
 }
 
