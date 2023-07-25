@@ -17,7 +17,7 @@ type CollectionRegisterFactJSONMarshaler struct {
 	Name       types.CollectionName     `json:"name"`
 	Royalty    types.PaymentParameter   `json:"royalty"`
 	URI        types.URI                `json:"uri"`
-	Whites     []mitumbase.Address      `json:"whites"`
+	Whitelist  []mitumbase.Address      `json:"whitelist"`
 	Currency   currencytypes.CurrencyID `json:"currency"`
 }
 
@@ -30,7 +30,7 @@ func (fact CollectionRegisterFact) MarshalJSON() ([]byte, error) {
 		Name:                  fact.name,
 		Royalty:               fact.royalty,
 		URI:                   fact.uri,
-		Whites:                fact.whitelist,
+		Whitelist:             fact.whitelist,
 		Currency:              fact.currency,
 	})
 }
@@ -43,7 +43,7 @@ type CollectionRegisterFactJSONUnmarshaler struct {
 	Name       string   `json:"name"`
 	Royalty    uint     `json:"royalty"`
 	URI        string   `json:"uri"`
-	Whites     []string `json:"whites"`
+	Whitelist  []string `json:"whitelist"`
 	Currency   string   `json:"currency"`
 }
 
@@ -57,7 +57,7 @@ func (fact *CollectionRegisterFact) DecodeJSON(b []byte, enc *jsonenc.Encoder) e
 
 	fact.BaseFact.SetJSONUnmarshaler(u.BaseFactJSONUnmarshaler)
 
-	return fact.unmarshal(enc, u.Sender, u.Contract, u.Collection, u.Name, u.Royalty, u.URI, u.Whites, u.Currency)
+	return fact.unmarshal(enc, u.Sender, u.Contract, u.Collection, u.Name, u.Royalty, u.URI, u.Whitelist, u.Currency)
 }
 
 type collectionRegisterMarshaler struct {

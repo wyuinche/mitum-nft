@@ -5,14 +5,12 @@ import (
 	"sync"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	"github.com/ProtoconNet/mitum-currency/v3/state"
 	currencystate "github.com/ProtoconNet/mitum-currency/v3/state"
+	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
+	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	statenft "github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-
-	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
 	mitumbase "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
@@ -75,24 +73,24 @@ func (opp *CollectionRegisterProcessor) PreProcess(
 		return ctx, nil, e.Wrap(err)
 	}
 
-	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
+	if err := currencystate.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q: %w", fact.Sender(), err), nil
 	}
 
-	_, err := state.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
+	_, err := currencystate.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
 	if err != nil {
 		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q: %w", fact.Currency(), err), nil
 	}
 
-	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
+	if err := currencystate.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender is contract account, %q", fact.Sender()), nil
 	}
 
-	if err := state.CheckFactSignsByState(fact.Sender(), op.Signs(), getStateFunc); err != nil {
+	if err := currencystate.CheckFactSignsByState(fact.Sender(), op.Signs(), getStateFunc); err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing: %w", err), nil
 	}
 
-	st, err := state.ExistsState(stateextension.StateKeyContractAccount(fact.Contract()), "key of contract account", getStateFunc)
+	st, err := currencystate.ExistsState(stateextension.StateKeyContractAccount(fact.Contract()), "key of contract account", getStateFunc)
 	if err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("target contract account not found, %q: %w", fact.Contract(), err), nil
 	}
@@ -110,19 +108,19 @@ func (opp *CollectionRegisterProcessor) PreProcess(
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("deactivated contract account, %q", fact.Contract()), nil
 	}
 
-	if err := state.CheckNotExistsState(statenft.NFTStateKey(fact.contract, fact.Collection(), statenft.CollectionKey), getStateFunc); err != nil {
+	if err := currencystate.CheckNotExistsState(statenft.NFTStateKey(fact.contract, fact.Collection(), statenft.CollectionKey), getStateFunc); err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("collection design already exists, %q: %w", fact.Collection(), err), nil
 	}
 
-	if err := state.CheckNotExistsState(statenft.NFTStateKey(fact.contract, fact.Collection(), statenft.LastIDXKey), getStateFunc); err != nil {
+	if err := currencystate.CheckNotExistsState(statenft.NFTStateKey(fact.contract, fact.Collection(), statenft.LastIDXKey), getStateFunc); err != nil {
 		return ctx, mitumbase.NewBaseOperationProcessReasonError("last index of collection design already exists, %q: %w", fact.Collection(), err), nil
 	}
 
-	whites := fact.Whites()
-	for _, white := range whites {
-		if err := state.CheckExistsState(statecurrency.StateKeyAccount(white), getStateFunc); err != nil {
+	whitelist := fact.Whites()
+	for _, white := range whitelist {
+		if err := currencystate.CheckExistsState(statecurrency.StateKeyAccount(white), getStateFunc); err != nil {
 			return ctx, mitumbase.NewBaseOperationProcessReasonError("whitelist account not found, %q: %w", white, err), nil
-		} else if err = state.CheckNotExistsState(stateextension.StateKeyContractAccount(white), getStateFunc); err != nil {
+		} else if err = currencystate.CheckNotExistsState(stateextension.StateKeyContractAccount(white), getStateFunc); err != nil {
 			return ctx, mitumbase.NewBaseOperationProcessReasonError("whitelist account is contract account, %q: %w", white, err), nil
 		}
 	}
@@ -158,7 +156,7 @@ func (opp *CollectionRegisterProcessor) Process(
 		statenft.NewLastNFTIndexStateValue(0),
 	)
 
-	currencyPolicy, err := state.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
+	currencyPolicy, err := currencystate.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
 	if err != nil {
 		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q: %w", fact.Currency(), err), nil
 	}
@@ -168,7 +166,7 @@ func (opp *CollectionRegisterProcessor) Process(
 		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check fee of currency, %q: %w", fact.Currency(), err), nil
 	}
 
-	st, err := state.ExistsState(statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), "key of sender balance", getStateFunc)
+	st, err := currencystate.ExistsState(statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), "key of sender balance", getStateFunc)
 	if err != nil {
 		return nil, mitumbase.NewBaseOperationProcessReasonError("sender balance not found, %q: %w", fact.Sender(), err), nil
 	}

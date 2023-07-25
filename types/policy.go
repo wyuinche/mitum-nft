@@ -11,7 +11,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 
-var MaxWhites = 10
+var MaxWhitelist = 10
 
 var (
 	MinLengthCollectionName = 3
@@ -53,19 +53,19 @@ var CollectionPolicyHint = hint.MustNewHint("mitum-nft-collection-policy-v0.0.1"
 
 type CollectionPolicy struct {
 	hint.BaseHinter
-	name    CollectionName
-	royalty PaymentParameter
-	uri     URI
-	whites  []mitumbase.Address
+	name      CollectionName
+	royalty   PaymentParameter
+	uri       URI
+	whitelist []mitumbase.Address
 }
 
-func NewCollectionPolicy(name CollectionName, royalty PaymentParameter, uri URI, whites []mitumbase.Address) CollectionPolicy {
+func NewCollectionPolicy(name CollectionName, royalty PaymentParameter, uri URI, whitelist []mitumbase.Address) CollectionPolicy {
 	return CollectionPolicy{
 		BaseHinter: hint.NewBaseHinter(CollectionPolicyHint),
 		name:       name,
 		royalty:    royalty,
 		uri:        uri,
-		whites:     whites,
+		whitelist:  whitelist,
 	}
 }
 
@@ -78,12 +78,12 @@ func (policy CollectionPolicy) IsValid([]byte) error {
 		return err
 	}
 
-	if l := len(policy.whites); l > MaxWhites {
-		return util.ErrInvalid.Errorf("whites over allowed, %d > %d", l, MaxWhites)
+	if l := len(policy.whitelist); l > MaxWhitelist {
+		return util.ErrInvalid.Errorf("whitelist over allowed, %d > %d", l, MaxWhitelist)
 	}
 
 	founds := map[string]struct{}{}
-	for _, white := range policy.whites {
+	for _, white := range policy.whitelist {
 		if err := white.IsValid(nil); err != nil {
 			return err
 		}
@@ -97,8 +97,8 @@ func (policy CollectionPolicy) IsValid([]byte) error {
 }
 
 func (policy CollectionPolicy) Bytes() []byte {
-	as := make([][]byte, len(policy.whites))
-	for i, white := range policy.whites {
+	as := make([][]byte, len(policy.whitelist))
+	for i, white := range policy.whitelist {
 		as[i] = white.Bytes()
 	}
 
@@ -122,12 +122,12 @@ func (policy CollectionPolicy) URI() URI {
 	return policy.uri
 }
 
-func (policy CollectionPolicy) Whites() []mitumbase.Address {
-	return policy.whites
+func (policy CollectionPolicy) Whitelist() []mitumbase.Address {
+	return policy.whitelist
 }
 
 func (policy CollectionPolicy) Addresses() ([]mitumbase.Address, error) {
-	return policy.whites, nil
+	return policy.whitelist, nil
 }
 
 func (policy CollectionPolicy) Equal(c BasePolicy) bool {
@@ -148,21 +148,21 @@ func (policy CollectionPolicy) Equal(c BasePolicy) bool {
 		return false
 	}
 
-	if len(policy.whites) != len(cpolicy.whites) {
+	if len(policy.whitelist) != len(cpolicy.whitelist) {
 		return false
 	}
 
-	whites := policy.Whites()
-	cwhites := cpolicy.Whites()
-	sort.Slice(whites, func(i, j int) bool {
-		return bytes.Compare(whites[j].Bytes(), whites[i].Bytes()) < 0
+	whitelist := policy.Whitelist()
+	cwhitelist := cpolicy.Whitelist()
+	sort.Slice(whitelist, func(i, j int) bool {
+		return bytes.Compare(whitelist[j].Bytes(), whitelist[i].Bytes()) < 0
 	})
-	sort.Slice(cwhites, func(i, j int) bool {
-		return bytes.Compare(cwhites[j].Bytes(), cwhites[i].Bytes()) < 0
+	sort.Slice(cwhitelist, func(i, j int) bool {
+		return bytes.Compare(cwhitelist[j].Bytes(), cwhitelist[i].Bytes()) < 0
 	})
 
-	for i := range whites {
-		if !whites[i].Equal(cwhites[i]) {
+	for i := range whitelist {
+		if !whitelist[i].Equal(cwhitelist[i]) {
 			return false
 		}
 	}

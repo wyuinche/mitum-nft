@@ -64,8 +64,8 @@ func (fact CollectionPolicyUpdaterFact) IsValid(b []byte) error {
 		return err
 	}
 
-	if l := len(fact.whitelist); l > types.MaxWhites {
-		return util.ErrInvalid.Errorf("whites over allowed, %d > %d", l, types.MaxWhites)
+	if l := len(fact.whitelist); l > types.MaxWhitelist {
+		return util.ErrInvalid.Errorf("whitelist over allowed, %d > %d", l, types.MaxWhitelist)
 	}
 
 	if err := util.CheckIsValiders(

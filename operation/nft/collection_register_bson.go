@@ -21,7 +21,7 @@ func (fact CollectionRegisterFact) MarshalBSON() ([]byte, error) {
 		"name":       fact.name,
 		"royalty":    fact.royalty,
 		"uri":        fact.uri,
-		"whites":     fact.whitelist,
+		"whitelist":  fact.whitelist,
 		"currency":   fact.currency,
 	})
 }
@@ -34,7 +34,7 @@ type CollectionRegisterFactBSONUnmarshaler struct {
 	Name       string   `bson:"name"`
 	Royalty    uint     `bson:"royalty"`
 	URI        string   `bson:"uri"`
-	Whites     []string `bson:"whites"`
+	Whitelist  []string `bson:"whitelist"`
 	Currency   string   `bson:"currency"`
 }
 
@@ -62,7 +62,7 @@ func (fact *CollectionRegisterFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) e
 	}
 	fact.BaseHinter = hint.NewBaseHinter(ht)
 
-	return fact.unmarshal(enc, uf.Sender, uf.Contract, uf.Collection, uf.Name, uf.Royalty, uf.URI, uf.Whites, uf.Currency)
+	return fact.unmarshal(enc, uf.Sender, uf.Contract, uf.Collection, uf.Name, uf.Royalty, uf.URI, uf.Whitelist, uf.Currency)
 }
 
 func (op CollectionRegister) MarshalBSON() ([]byte, error) {

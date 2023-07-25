@@ -22,15 +22,15 @@ func (p *CollectionPolicy) unmarshal(
 	p.royalty = PaymentParameter(ry)
 	p.uri = URI(uri)
 
-	whites := make([]base.Address, len(bws))
+	whitelist := make([]base.Address, len(bws))
 	for i, bw := range bws {
 		white, err := base.DecodeAddress(bw, enc)
 		if err != nil {
 			return e.Wrap(err)
 		}
-		whites[i] = white
+		whitelist[i] = white
 	}
-	p.whites = whites
+	p.whitelist = whitelist
 
 	return nil
 }

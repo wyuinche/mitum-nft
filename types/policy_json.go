@@ -9,10 +9,10 @@ import (
 
 type CollectionPolicyJSONMarshaler struct {
 	hint.BaseHinter
-	Name    CollectionName   `json:"name"`
-	Royalty PaymentParameter `json:"royalty"`
-	URI     URI              `json:"uri"`
-	Whites  []base.Address   `json:"whites"`
+	Name      CollectionName   `json:"name"`
+	Royalty   PaymentParameter `json:"royalty"`
+	URI       URI              `json:"uri"`
+	Whitelist []base.Address   `json:"whitelist"`
 }
 
 func (p CollectionPolicy) MarshalJSON() ([]byte, error) {
@@ -21,16 +21,16 @@ func (p CollectionPolicy) MarshalJSON() ([]byte, error) {
 		Name:       p.name,
 		Royalty:    p.royalty,
 		URI:        p.uri,
-		Whites:     p.whites,
+		Whitelist:  p.whitelist,
 	})
 }
 
 type CollectionPolicyJSONUnmarshaler struct {
-	Hint    hint.Hint `json:"_hint"`
-	Name    string    `json:"name"`
-	Royalty uint      `json:"royalty"`
-	URI     string    `json:"uri"`
-	Whites  []string  `json:"whites"`
+	Hint      hint.Hint `json:"_hint"`
+	Name      string    `json:"name"`
+	Royalty   uint      `json:"royalty"`
+	URI       string    `json:"uri"`
+	Whitelist []string  `json:"whitelist"`
 }
 
 func (p *CollectionPolicy) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
@@ -41,5 +41,5 @@ func (p *CollectionPolicy) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
 		return e.Wrap(err)
 	}
 
-	return p.unmarshal(enc, u.Hint, u.Name, u.Royalty, u.URI, u.Whites)
+	return p.unmarshal(enc, u.Hint, u.Name, u.Royalty, u.URI, u.Whitelist)
 }

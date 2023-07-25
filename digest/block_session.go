@@ -127,6 +127,8 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 	}
 
 	if len(bs.nftCollectionModels) > 0 {
+		fmt.Println("||||||||||||||||||", len(bs.nftCollectionModels))
+		fmt.Printf("%s", bs.nftCollectionModels[0])
 		if err := bs.writeModels(ctx, defaultColNameNFTCollection, bs.nftCollectionModels); err != nil {
 			return err
 		}

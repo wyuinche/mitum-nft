@@ -181,7 +181,7 @@ func (opp *MintProcessor) PreProcess(
 			//	return nil, base.NewBaseOperationProcessReasonError("expected CollectionPolicy, not %T", design.Policy()), nil
 			//}
 
-			//whites := policy.Whites()
+			//whites := policy.Whitelist()
 			//if len(whites) == 0 {
 			//	return nil, base.NewBaseOperationProcessReasonError("empty whitelist, %q", collection), nil
 			//}

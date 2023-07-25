@@ -40,16 +40,16 @@ func (fact *CollectionRegisterFact) unmarshal(
 	}
 	fact.contract = contract
 
-	whites := make([]mitumbase.Address, len(bws))
+	whitelist := make([]mitumbase.Address, len(bws))
 	for i, bw := range bws {
 		white, err := mitumbase.DecodeAddress(bw, enc)
 		if err != nil {
 			return e.Wrap(err)
 		}
-		whites[i] = white
+		whitelist[i] = white
 
 	}
-	fact.whitelist = whites
+	fact.whitelist = whitelist
 
 	return nil
 }
