@@ -74,25 +74,25 @@ func (opp *CollectionPolicyUpdaterProcessor) PreProcess(
 	}
 
 	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q: %w", fact.Sender(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q; %w", fact.Sender(), err), nil
 	}
 
 	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("contract account cannot update collection policy, %q: %w", fact.Sender(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("contract account cannot update collection policy, %q; %w", fact.Sender(), err), nil
 	}
 
 	if err := state.CheckFactSignsByState(fact.Sender(), op.Signs(), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing: %w", err), nil
+		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing; %w", err), nil
 	}
 
 	st, err := state.ExistsState(statenft.NFTStateKey(fact.contract, fact.collection, statenft.CollectionKey), "key of collection design", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q: %w", fact.Collection(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q; %w", fact.Collection(), err), nil
 	}
 
 	design, err := statenft.StateCollectionValue(st)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q: %w", fact.Collection(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", fact.Collection(), err), nil
 	}
 
 	if !design.Active() {
@@ -105,12 +105,12 @@ func (opp *CollectionPolicyUpdaterProcessor) PreProcess(
 
 	st, err = state.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract account", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("parent not found, %q: %w", design.Parent(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("parent not found, %q; %w", design.Parent(), err), nil
 	}
 
 	ca, err := stateextension.StateContractAccountValue(st)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("contract account value not found, %q: %w", design.Parent(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("contract account value not found, %q; %w", design.Parent(), err), nil
 	}
 
 	if !ca.IsActive() {
@@ -131,12 +131,12 @@ func (opp *CollectionPolicyUpdaterProcessor) Process(
 
 	st, err := state.ExistsState(statenft.NFTStateKey(fact.contract, fact.collection, statenft.CollectionKey), "key of design", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q: %w", fact.Collection(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q; %w", fact.Collection(), err), nil
 	}
 
 	design, err := statenft.StateCollectionValue(st)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q: %w", fact.Collection(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", fact.Collection(), err), nil
 	}
 
 	sts := make([]mitumbase.StateMergeValue, 2)
@@ -152,23 +152,23 @@ func (opp *CollectionPolicyUpdaterProcessor) Process(
 
 	currencyPolicy, err := state.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q: %w", fact.Currency(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q; %w", fact.Currency(), err), nil
 	}
 
 	fee, err := currencyPolicy.Feeer().Fee(common.ZeroBig)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check fee of currency, %q: %w", fact.Currency(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check fee of currency, %q; %w", fact.Currency(), err), nil
 	}
 
 	st, err = state.ExistsState(statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), "key of sender balance", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("sender balance not found, %q: %w", fact.Sender(), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("sender balance not found, %q; %w", fact.Sender(), err), nil
 	}
 	sb := state.NewStateMergeValue(st.Key(), st.Value())
 
 	switch b, err := statecurrency.StateBalanceValue(st); {
 	case err != nil:
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to get balance value, %q: %w", statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to get balance value, %q; %w", statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), err), nil
 	case b.Big().Compare(fee) < 0:
 		return nil, mitumbase.NewBaseOperationProcessReasonError("not enough balance of sender, %q", fact.Sender()), nil
 	}

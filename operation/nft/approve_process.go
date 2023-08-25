@@ -47,17 +47,17 @@ func (ipp *ApproveItemProcessor) PreProcess(
 	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc,
 ) error {
 	if err := state.CheckExistsState(statecurrency.StateKeyAccount(ipp.item.Approved()), getStateFunc); err != nil {
-		return errors.Errorf("approved not found, %q: %w", ipp.item.Approved(), err)
+		return errors.Errorf("approved not found, %q; %w", ipp.item.Approved(), err)
 	}
 
 	st, err := state.ExistsState(statenft.NFTStateKey(ipp.item.contract, ipp.item.collection, statenft.CollectionKey), "key of design", getStateFunc)
 	if err != nil {
-		return errors.Errorf("collection design not found, %q: %w", ipp.item.contract, err)
+		return errors.Errorf("collection design not found, %q; %w", ipp.item.contract, err)
 	}
 
 	design, err := statenft.StateCollectionValue(st)
 	if err != nil {
-		return errors.Errorf("collection design value not found, %q: %w", ipp.item.collection, err)
+		return errors.Errorf("collection design value not found, %q; %w", ipp.item.collection, err)
 	}
 
 	if !design.Active() {
@@ -66,12 +66,12 @@ func (ipp *ApproveItemProcessor) PreProcess(
 
 	st, err = state.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "contract account", getStateFunc)
 	if err != nil {
-		return errors.Errorf("parent not found, %q: %w", design.Parent(), err)
+		return errors.Errorf("parent not found, %q; %w", design.Parent(), err)
 	}
 
 	ca, err := stateextension.StateContractAccountValue(st)
 	if err != nil {
-		return errors.Errorf("contract account value not found, %q: %w", design.Parent(), err)
+		return errors.Errorf("contract account value not found, %q; %w", design.Parent(), err)
 	}
 
 	if !ca.IsActive() {
@@ -80,12 +80,12 @@ func (ipp *ApproveItemProcessor) PreProcess(
 
 	st, err = state.ExistsState(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, ipp.item.idx), "key of nft", getStateFunc)
 	if err != nil {
-		return errors.Errorf("nft not found, %q: %w", ipp.item.idx, err)
+		return errors.Errorf("nft not found, %q; %w", ipp.item.idx, err)
 	}
 
 	nv, err := statenft.StateNFTValue(st)
 	if err != nil {
-		return errors.Errorf("nft value not found, %q: %w", ipp.item.idx, err)
+		return errors.Errorf("nft value not found, %q; %w", ipp.item.idx, err)
 	}
 
 	if !nv.Active() {
@@ -102,17 +102,17 @@ func (ipp *ApproveItemProcessor) PreProcess(
 
 	if !nv.Owner().Equal(ipp.sender) {
 		if err := state.CheckExistsState(statecurrency.StateKeyAccount(nv.Owner()), getStateFunc); err != nil {
-			return errors.Errorf("nft owner not found, %q: %w", nv.Owner(), err)
+			return errors.Errorf("nft owner not found, %q; %w", nv.Owner(), err)
 		}
 
 		st, err = state.ExistsState(statenft.StateKeyOperators(ipp.item.contract, ipp.item.collection, nv.Owner()), "key of operators", getStateFunc)
 		if err != nil {
-			return errors.Errorf("unauthorized sender, %q: %w", ipp.sender, err)
+			return errors.Errorf("unauthorized sender, %q; %w", ipp.sender, err)
 		}
 
 		operators, err := statenft.StateOperatorsBookValue(st)
 		if err != nil {
-			return errors.Errorf("operators book value not found, %q: %w", statenft.StateKeyOperators(ipp.item.contract, ipp.item.collection, nv.Owner()), err)
+			return errors.Errorf("operators book value not found, %q; %w", statenft.StateKeyOperators(ipp.item.contract, ipp.item.collection, nv.Owner()), err)
 		}
 
 		if !operators.Exists(ipp.sender) {
@@ -130,12 +130,12 @@ func (ipp *ApproveItemProcessor) Process(
 
 	st, err := state.ExistsState(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, nid), "key of nft", getStateFunc)
 	if err != nil {
-		return nil, errors.Errorf("nft not found, %q: %w", nid, err)
+		return nil, errors.Errorf("nft not found, %q; %w", nid, err)
 	}
 
 	nv, err := statenft.StateNFTValue(st)
 	if err != nil {
-		return nil, errors.Errorf("nft value not found, %q: %w", nid, err)
+		return nil, errors.Errorf("nft value not found, %q; %w", nid, err)
 	}
 
 	n := types.NewNFT(nv.ID(), nv.Active(), nv.Owner(), nv.NFTHash(), nv.URI(), ipp.item.Approved(), nv.Creators())
@@ -204,11 +204,11 @@ func (opp *ApproveProcessor) PreProcess(
 	}
 
 	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q: %w", fact.Sender(), err), nil
+		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q; %w", fact.Sender(), err), nil
 	}
 
 	if err := state.CheckFactSignsByState(fact.sender, op.Signs(), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing: %w", err), nil
+		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing; %w", err), nil
 	}
 
 	for _, item := range fact.Items() {
@@ -223,7 +223,7 @@ func (opp *ApproveProcessor) PreProcess(
 		ipc.item = item
 
 		if err := ipc.PreProcess(ctx, op, getStateFunc); err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("fail to preprocess ApproveItem: %w", err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("fail to preprocess ApproveItem; %w", err), nil
 		}
 
 		ipc.Close()
@@ -257,7 +257,7 @@ func (opp *ApproveProcessor) Process(
 
 		s, err := ipc.Process(ctx, op, getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to process ApproveItem: %w", err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to process ApproveItem; %w", err), nil
 		}
 		sts = append(sts, s...)
 
@@ -272,11 +272,11 @@ func (opp *ApproveProcessor) Process(
 
 	required, err := CalculateCollectionItemsFee(getStateFunc, items)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to calculate fee: %w", err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to calculate fee; %w", err), nil
 	}
 	sb, err := currency.CheckEnoughBalance(fact.sender, required, getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check enough balance: %w", err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check enough balance; %w", err), nil
 	}
 
 	for i := range sb {

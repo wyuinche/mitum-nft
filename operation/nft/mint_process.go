@@ -47,7 +47,7 @@ func (ipp *MintItemProcessor) PreProcess(
 	_ context.Context, _ base.Operation, getStateFunc base.GetStateFunc,
 ) error {
 	if err := state.CheckNotExistsState(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, ipp.idx), getStateFunc); err != nil {
-		return errors.Errorf("nft already exists, %q: %w", ipp.idx, err)
+		return errors.Errorf("nft already exists, %q; %w", ipp.idx, err)
 	}
 
 	if ipp.item.Creators().Total() != 0 {
@@ -55,10 +55,10 @@ func (ipp *MintItemProcessor) PreProcess(
 		for _, creator := range creators {
 			acc := creator.Account()
 			if err := state.CheckExistsState(statecurrency.StateKeyAccount(acc), getStateFunc); err != nil {
-				return errors.Errorf("creator not found, %q: %w", acc, err)
+				return errors.Errorf("creator not found, %q; %w", acc, err)
 			}
 			if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(acc), getStateFunc); err != nil {
-				return errors.Errorf("contract account cannot be a creator, %q: %w", acc, err)
+				return errors.Errorf("contract account cannot be a creator, %q; %w", acc, err)
 			}
 			if creator.Signed() {
 				return errors.Errorf("cannot sign at the same time as minting, %q", acc)
@@ -76,13 +76,13 @@ func (ipp *MintItemProcessor) Process(
 
 	n := types.NewNFT(ipp.idx, true, ipp.sender, ipp.item.NFTHash(), ipp.item.URI(), ipp.sender, ipp.item.Creators())
 	if err := n.IsValid(nil); err != nil {
-		return nil, errors.Errorf("invalid nft, %q: %w", ipp.idx, err)
+		return nil, errors.Errorf("invalid nft, %q; %w", ipp.idx, err)
 	}
 
 	sts[0] = state.NewStateMergeValue(statenft.StateKeyNFT(ipp.item.contract, ipp.item.collection, ipp.idx), statenft.NewNFTStateValue(n))
 
 	if err := ipp.box.Append(n.ID()); err != nil {
-		return nil, errors.Errorf("failed to append nft id to nft box, %q: %w", n.ID(), err)
+		return nil, errors.Errorf("failed to append nft id to nft box, %q; %w", n.ID(), err)
 	}
 
 	return sts, nil
@@ -146,7 +146,7 @@ func (opp *MintProcessor) PreProcess(
 	}
 
 	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
-		return ctx, base.NewBaseOperationProcessReasonError("sender not found, %q: %w", fact.Sender(), err), nil
+		return ctx, base.NewBaseOperationProcessReasonError("sender not found, %q; %w", fact.Sender(), err), nil
 	}
 
 	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
@@ -154,7 +154,7 @@ func (opp *MintProcessor) PreProcess(
 	}
 
 	if err := state.CheckFactSignsByState(fact.sender, op.Signs(), getStateFunc); err != nil {
-		return ctx, base.NewBaseOperationProcessReasonError("invalid signing: %w", err), nil
+		return ctx, base.NewBaseOperationProcessReasonError("invalid signing; %w", err), nil
 	}
 
 	idxes := map[currencytypes.ContractID]uint64{}
@@ -164,12 +164,12 @@ func (opp *MintProcessor) PreProcess(
 		if _, found := idxes[collection]; !found {
 			st, err := state.ExistsState(statenft.NFTStateKey(item.contract, collection, statenft.CollectionKey), "key of collection design", getStateFunc)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("collection design not found, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("collection design not found, %q; %w", collection, err), nil
 			}
 
 			design, err := statenft.StateCollectionValue(st)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("collection design value not found, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", collection, err), nil
 			}
 
 			if !design.Active() {
@@ -188,12 +188,12 @@ func (opp *MintProcessor) PreProcess(
 
 			st, err = state.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract account", getStateFunc)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("parent not found, %q: %w", design.Parent(), err), nil
+				return nil, base.NewBaseOperationProcessReasonError("parent not found, %q; %w", design.Parent(), err), nil
 			}
 
 			parent, err := stateextension.StateContractAccountValue(st)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("parent value not found, %q: %w", design.Parent(), err), nil
+				return nil, base.NewBaseOperationProcessReasonError("parent value not found, %q; %w", design.Parent(), err), nil
 			}
 
 			if !parent.Owner().Equal(fact.Sender()) {
@@ -215,12 +215,12 @@ func (opp *MintProcessor) PreProcess(
 
 			st, err = state.ExistsState(statenft.NFTStateKey(item.contract, collection, statenft.LastIDXKey), "key of collection index", getStateFunc)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("collection last index not found, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("collection last index not found, %q; %w", collection, err), nil
 			}
 
 			nftID, err := statenft.StateLastNFTIndexValue(st)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("collection last index value not found, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("collection last index value not found, %q; %w", collection, err), nil
 			}
 
 			idxes[collection] = nftID
@@ -241,7 +241,7 @@ func (opp *MintProcessor) PreProcess(
 		ipc.box = nil
 
 		if err := ipc.PreProcess(ctx, op, getStateFunc); err != nil {
-			return nil, base.NewBaseOperationProcessReasonError("fail to preprocess MintItem: %w", err), nil
+			return nil, base.NewBaseOperationProcessReasonError("fail to preprocess MintItem; %w", err), nil
 		}
 		idxes[item.Collection()] += 1
 
@@ -271,12 +271,12 @@ func (opp *MintProcessor) Process( // nolint:dupl
 		if _, found := idxes[idxKey]; !found {
 			st, err := state.ExistsState(idxKey, "key of collection index", getStateFunc)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("collection last index state not found, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("collection last index state not found, %q; %w", collection, err), nil
 			}
 
 			nftID, err := statenft.StateLastNFTIndexValue(st)
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("collection last index value not found, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("collection last index value not found, %q; %w", collection, err), nil
 			}
 
 			idxes[idxKey] = nftID
@@ -288,13 +288,13 @@ func (opp *MintProcessor) Process( // nolint:dupl
 
 			switch st, found, err := getStateFunc(nftsKey); {
 			case err != nil:
-				return nil, base.NewBaseOperationProcessReasonError("failed to get nft box state, %q: %w", collection, err), nil
+				return nil, base.NewBaseOperationProcessReasonError("failed to get nft box state, %q; %w", collection, err), nil
 			case !found:
 				box = types.NewNFTBox(nil)
 			default:
 				b, err := statenft.StateNFTBoxValue(st)
 				if err != nil {
-					return nil, base.NewBaseOperationProcessReasonError("failed to get nft box state value, %q: %w", collection, err), nil
+					return nil, base.NewBaseOperationProcessReasonError("failed to get nft box state value, %q; %w", collection, err), nil
 				}
 				box = b
 			}
@@ -324,7 +324,7 @@ func (opp *MintProcessor) Process( // nolint:dupl
 
 		s, err := ipc.Process(ctx, op, getStateFunc)
 		if err != nil {
-			return nil, base.NewBaseOperationProcessReasonError("failed to process MintItem: %w", err), nil
+			return nil, base.NewBaseOperationProcessReasonError("failed to process MintItem; %w", err), nil
 		}
 		sts = append(sts, s...)
 
@@ -357,11 +357,11 @@ func (opp *MintProcessor) Process( // nolint:dupl
 
 	required, err := CalculateCollectionItemsFee(getStateFunc, items)
 	if err != nil {
-		return nil, base.NewBaseOperationProcessReasonError("failed to calculate fee: %w", err), nil
+		return nil, base.NewBaseOperationProcessReasonError("failed to calculate fee; %w", err), nil
 	}
 	sb, err := currency.CheckEnoughBalance(fact.sender, required, getStateFunc)
 	if err != nil {
-		return nil, base.NewBaseOperationProcessReasonError("failed to check enough balance: %w", err), nil
+		return nil, base.NewBaseOperationProcessReasonError("failed to check enough balance; %w", err), nil
 	}
 
 	for i := range sb {

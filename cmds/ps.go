@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"context"
-
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencyprocessor "github.com/ProtoconNet/mitum-currency/v3/operation/processor"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
@@ -21,7 +20,7 @@ func POperationProcessorsMap(pctx context.Context) (context.Context, error) {
 	var isaacParams *isaac.Params
 	var db isaac.Database
 	var opr *currencyprocessor.OperationProcessor
-	var set *hint.CompatibleSet
+	var set *hint.CompatibleSet[isaac.NewOperationProcessorInternalFunc]
 
 	if err := util.LoadFromContextOK(pctx,
 		launch.ISAACParamsContextKey, &isaacParams,

@@ -143,7 +143,7 @@ func (opp *DelegateProcessor) PreProcess(
 	}
 
 	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q: %w", fact.Sender(), err), nil
+		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q; %w", fact.Sender(), err), nil
 	}
 
 	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
@@ -151,18 +151,18 @@ func (opp *DelegateProcessor) PreProcess(
 	}
 
 	if err := state.CheckFactSignsByState(fact.sender, op.Signs(), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing: %w", err), nil
+		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing; %w", err), nil
 	}
 
 	for _, item := range fact.Items() {
 		st, err := state.ExistsState(statenft.NFTStateKey(item.contract, item.Collection(), statenft.CollectionKey), "key of design", getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q: %w", item.Collection(), err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q; %w", item.Collection(), err), nil
 		}
 
 		design, err := statenft.StateCollectionValue(st)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q: %w", item.Collection(), err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", item.Collection(), err), nil
 		}
 
 		if !design.Active() {
@@ -171,12 +171,12 @@ func (opp *DelegateProcessor) PreProcess(
 
 		st, err = state.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract account", getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("parent not found, %q: %w", design.Parent(), err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("parent not found, %q; %w", design.Parent(), err), nil
 		}
 
 		ca, err := stateextension.StateContractAccountValue(st)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("contract account value not found, %q: %w", design.Parent(), err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("contract account value not found, %q; %w", design.Parent(), err), nil
 		}
 
 		if !ca.IsActive() {
@@ -197,7 +197,7 @@ func (opp *DelegateProcessor) PreProcess(
 		ipc.box = nil
 
 		if err := ipc.PreProcess(ctx, op, getStateFunc); err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("fail to preprocess DelegateItem: %w", err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("fail to preprocess DelegateItem; %w", err), nil
 		}
 
 		ipc.Close()
@@ -224,13 +224,13 @@ func (opp *DelegateProcessor) Process(
 		var operators types.OperatorsBook
 		switch st, found, err := getStateFunc(ak); {
 		case err != nil:
-			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to get state of operators book, %q: %w", ak, err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to get state of operators book, %q; %w", ak, err), nil
 		case !found:
 			operators = types.NewOperatorsBook(item.Collection(), nil)
 		default:
 			o, err := statenft.StateOperatorsBookValue(st)
 			if err != nil {
-				return nil, mitumbase.NewBaseOperationProcessReasonError("operators book value not found, %q: %w", ak, err), nil
+				return nil, mitumbase.NewBaseOperationProcessReasonError("operators book value not found, %q; %w", ak, err), nil
 			} else {
 				operators = *o
 			}
@@ -255,7 +255,7 @@ func (opp *DelegateProcessor) Process(
 
 		s, err := ipc.Process(ctx, op, getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to process DelegateItem: %w", err), nil
+			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to process DelegateItem; %w", err), nil
 		}
 		sts = append(sts, s...)
 
@@ -273,11 +273,11 @@ func (opp *DelegateProcessor) Process(
 
 	required, err := opp.calculateItemsFee(op, getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to calculate fee: %w", err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to calculate fee; %w", err), nil
 	}
 	sb, err := currency.CheckEnoughBalance(fact.sender, required, getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check enough balance: %w", err), nil
+		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check enough balance; %w", err), nil
 	}
 
 	for i := range sb {
