@@ -11,7 +11,6 @@ import (
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacblock "github.com/ProtoconNet/mitum2/isaac/block"
 	"github.com/ProtoconNet/mitum2/util"
-	mitumutil "github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 	"github.com/ProtoconNet/mitum2/util/fixedtree"
 	"github.com/ProtoconNet/mitum2/util/logging"
@@ -107,7 +106,7 @@ func (di *Digester) digest(ctx context.Context, blk base.BlockMap) error {
 
 	enc, found := di.database.DatabaseEncoders().Find(jsonenc.JSONEncoderHint)
 	if !found { // NOTE get latest bson encoder
-		return mitumutil.ErrNotFound.Errorf("unknown encoder hint, %q", jsonenc.JSONEncoderHint)
+		return util.ErrNotFound.Errorf("unknown encoder hint, %q", jsonenc.JSONEncoderHint)
 	}
 
 	reader, err := isaacblock.NewLocalFSReaderFromHeight(di.localfsRoot, blk.Manifest().Height(), enc)

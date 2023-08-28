@@ -2,13 +2,14 @@ package digest
 
 import (
 	"context"
+	"strconv"
+
 	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-	"strconv"
 
 	"github.com/ProtoconNet/mitum-currency/v3/digest/util"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum2/base"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -31,7 +32,7 @@ func NFTCollection(st *currencydigest.Database, contract, col string) (*types.De
 	filter = filter.Add("collection", col)
 
 	var design *types.Design
-	var sta mitumbase.State
+	var sta base.State
 	var err error
 	if err := st.DatabaseClient().GetByFilter(
 		defaultColNameNFTCollection,
@@ -42,10 +43,11 @@ func NFTCollection(st *currencydigest.Database, contract, col string) (*types.De
 				return err
 			}
 
-			design, err = state.StateCollectionValue(sta)
+			d, err := state.StateDesignValue(sta)
 			if err != nil {
 				return err
 			}
+			design = &d
 
 			return nil
 		},
@@ -63,7 +65,7 @@ func NFT(st *currencydigest.Database, contract, col, idx string) (*types.NFT, er
 	filter = filter.Add("nftid", idx)
 
 	var nft *types.NFT
-	var sta mitumbase.State
+	var sta base.State
 	var err error
 	if err = st.DatabaseClient().GetByFilter(
 		defaultColNameNFT,
@@ -73,10 +75,11 @@ func NFT(st *currencydigest.Database, contract, col, idx string) (*types.NFT, er
 			if err != nil {
 				return err
 			}
-			nft, err = state.StateNFTValue(sta)
+			n, err := state.StateNFTValue(sta)
 			if err != nil {
 				return err
 			}
+			nft = &n
 
 			return nil
 		},
@@ -90,7 +93,7 @@ func NFT(st *currencydigest.Database, contract, col, idx string) (*types.NFT, er
 
 func NFTsByAddress(
 	st *currencydigest.Database,
-	address mitumbase.Address,
+	address base.Address,
 	reverse bool,
 	offset string,
 	limit int64,
@@ -133,7 +136,7 @@ func NFTsByAddress(
 				return false, err
 			}
 
-			return callback(strconv.FormatUint(nft.ID(), 10), *nft)
+			return callback(strconv.FormatUint(nft.ID(), 10), nft)
 		},
 		opt,
 	)
@@ -146,7 +149,7 @@ func NFTsByCollection(
 	reverse bool,
 	offset string,
 	limit int64,
-	callback func(nft types.NFT, st mitumbase.State) (bool, error),
+	callback func(nft types.NFT, st base.State) (bool, error),
 ) error {
 	filter, err := buildNFTsFilterByCollection(contract, col, offset, reverse)
 	if err != nil {
@@ -183,7 +186,7 @@ func NFTsByCollection(
 			if err != nil {
 				return false, err
 			}
-			return callback(*nft, st)
+			return callback(nft, st)
 		},
 		opt,
 	)
@@ -198,7 +201,7 @@ func NFTOperators(
 	filter = filter.Add("account", account)
 
 	var operators *types.OperatorsBook
-	var sta mitumbase.State
+	var sta base.State
 	var err error
 	if err := st.DatabaseClient().GetByFilter(
 		defaultColNameNFTOperator,
@@ -209,10 +212,11 @@ func NFTOperators(
 				return err
 			}
 
-			operators, err = state.StateOperatorsBookValue(sta)
+			ops, err := state.StateOperatorsBookValue(sta)
 			if err != nil {
 				return err
 			}
+			operators = &ops
 
 			return nil
 		},

@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"sort"
 
-	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
@@ -18,59 +19,61 @@ var OperatorsBookHint = hint.MustNewHint("mitum-nft-operator-book-v0.0.1")
 
 type OperatorsBook struct {
 	hint.BaseHinter
-	collection currencytypes.ContractID
-	operators  []mitumbase.Address
+	collection types.ContractID
+	operators  []base.Address
 }
 
-func NewOperatorsBook(collection currencytypes.ContractID, operators []mitumbase.Address) OperatorsBook {
+func NewOperatorsBook(collection types.ContractID, operators []base.Address) OperatorsBook {
 	if operators == nil {
-		return OperatorsBook{BaseHinter: hint.NewBaseHinter(OperatorsBookHint), collection: collection, operators: []mitumbase.Address{}}
+		operators = []base.Address{}
 	}
 	return OperatorsBook{BaseHinter: hint.NewBaseHinter(OperatorsBookHint), collection: collection, operators: operators}
 }
 
-func (ob OperatorsBook) IsValid([]byte) error {
-	for i := range ob.operators {
-		if err := ob.operators[i].IsValid(nil); err != nil {
-			return err
+func (o OperatorsBook) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(o))
+
+	for _, op := range o.operators {
+		if err := op.IsValid(nil); err != nil {
+			return e.Wrap(err)
 		}
 	}
 
 	return nil
 }
 
-func (ob OperatorsBook) Bytes() []byte {
-	ops := make([][]byte, len(ob.operators))
+func (o OperatorsBook) Bytes() []byte {
+	bs := make([][]byte, len(o.operators))
 
-	for i, operator := range ob.operators {
-		ops[i] = operator.Bytes()
+	for i, operator := range o.operators {
+		bs[i] = operator.Bytes()
 	}
 
-	return util.ConcatBytesSlice(ops...)
+	return util.ConcatBytesSlice(bs...)
 }
 
-func (ob OperatorsBook) Hash() util.Hash {
-	return ob.GenerateHash()
+func (o OperatorsBook) Hash() util.Hash {
+	return o.GenerateHash()
 }
 
-func (ob OperatorsBook) GenerateHash() util.Hash {
-	return valuehash.NewSHA256(ob.Bytes())
+func (o OperatorsBook) GenerateHash() util.Hash {
+	return valuehash.NewSHA256(o.Bytes())
 }
 
-func (ob OperatorsBook) IsEmpty() bool {
-	return len(ob.operators) < 1
+func (o OperatorsBook) IsEmpty() bool {
+	return len(o.operators) < 1
 }
 
-func (ob OperatorsBook) Collection() currencytypes.ContractID {
-	return ob.collection
+func (o OperatorsBook) Collection() types.ContractID {
+	return o.collection
 }
 
-func (ob OperatorsBook) Equal(b OperatorsBook) bool {
-	ob.Sort(true)
-	b.Sort(true)
+func (o OperatorsBook) Equal(c OperatorsBook) bool {
+	o.Sort(true)
+	c.Sort(true)
 
-	for i := range ob.operators {
-		if !ob.operators[i].Equal(b.operators[i]) {
+	for i := range o.operators {
+		if !o.operators[i].Equal(c.operators[i]) {
 			return false
 		}
 	}
@@ -78,75 +81,68 @@ func (ob OperatorsBook) Equal(b OperatorsBook) bool {
 	return true
 }
 
-func (ob *OperatorsBook) Sort(ascending bool) {
-	sort.Slice(ob.operators, func(i, j int) bool {
+func (o *OperatorsBook) Sort(ascending bool) {
+	sort.Slice(o.operators, func(i, j int) bool {
 		if ascending {
-			return bytes.Compare(ob.operators[j].Bytes(), ob.operators[i].Bytes()) > 0
+			return bytes.Compare(o.operators[j].Bytes(), o.operators[i].Bytes()) > 0
 		}
-
-		return bytes.Compare(ob.operators[j].Bytes(), ob.operators[i].Bytes()) < 0
+		return bytes.Compare(o.operators[j].Bytes(), o.operators[i].Bytes()) < 0
 	})
 }
 
-func (ob OperatorsBook) Exists(ag mitumbase.Address) bool {
-	if ob.IsEmpty() {
-		return false
-	}
-
-	for _, operator := range ob.operators {
+func (o OperatorsBook) Exists(ag base.Address) bool {
+	for _, operator := range o.operators {
 		if ag.Equal(operator) {
 			return true
 		}
 	}
-
 	return false
 }
 
-func (ob OperatorsBook) Get(ag mitumbase.Address) (mitumbase.Address, error) {
-	for _, operator := range ob.operators {
+func (o OperatorsBook) Get(ag base.Address) (base.Address, error) {
+	for _, operator := range o.operators {
 		if ag.Equal(operator) {
 			return operator, nil
 		}
 	}
-
-	return currencytypes.Address{}, errors.Errorf("account not in operators book, %q", ag)
+	return types.Address{}, errors.Errorf("account not in operators book, %q", ag)
 }
 
-func (ob *OperatorsBook) Append(ag mitumbase.Address) error {
+func (o *OperatorsBook) Append(ag base.Address) error {
 	if err := ag.IsValid(nil); err != nil {
 		return err
 	}
 
-	if ob.Exists(ag) {
+	if o.Exists(ag) {
 		return errors.Errorf("account already in operators book, %q", ag)
 	}
 
-	if len(ob.operators) >= MaxOperators {
+	if len(o.operators) >= MaxOperators {
 		return errors.Errorf("max operators, %v", ag)
 	}
 
-	ob.operators = append(ob.operators, ag)
+	o.operators = append(o.operators, ag)
 
 	return nil
 }
 
-func (ob *OperatorsBook) Remove(ag mitumbase.Address) error {
-	if !ob.Exists(ag) {
+func (o *OperatorsBook) Remove(ag base.Address) error {
+	if !o.Exists(ag) {
 		return errors.Errorf("account not in operators book, %q", ag)
 	}
 
-	for i := range ob.operators {
-		if ag.String() == ob.operators[i].String() {
-			ob.operators[i] = ob.operators[len(ob.operators)-1]
-			ob.operators[len(ob.operators)-1] = currencytypes.Address{}
-			ob.operators = ob.operators[:len(ob.operators)-1]
-
-			return nil
+	for i := range o.operators {
+		if ag.String() == o.operators[i].String() {
+			o.operators[i] = o.operators[len(o.operators)-1]
+			o.operators[len(o.operators)-1] = nil
+			o.operators = o.operators[:len(o.operators)-1]
+			break
 		}
 	}
+
 	return nil
 }
 
-func (ob OperatorsBook) Operators() []mitumbase.Address {
-	return ob.operators
+func (o OperatorsBook) Operators() []base.Address {
+	return o.operators
 }

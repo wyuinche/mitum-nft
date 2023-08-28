@@ -1,30 +1,31 @@
 package types
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 
-func (sgn *Signer) unmarshal(
+func (s *Signer) unmarshal(
 	enc encoder.Encoder,
 	ht hint.Hint,
 	ac string,
 	sh uint,
 	sg bool,
 ) error {
-	e := util.StringError("failed to unmarshal Signer")
+	e := util.StringError(utils.ErrStringUnmarshal(*s))
 
-	sgn.BaseHinter = hint.NewBaseHinter(ht)
-	sgn.share = sh
-	sgn.signed = sg
+	s.BaseHinter = hint.NewBaseHinter(ht)
+	s.share = sh
+	s.signed = sg
 
-	account, err := base.DecodeAddress(ac, enc)
+	a, err := base.DecodeAddress(ac, enc)
 	if err != nil {
 		return e.Wrap(err)
 	}
-	sgn.account = account
+	s.account = a
 
 	return nil
 }

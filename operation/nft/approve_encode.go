@@ -1,6 +1,7 @@
 package nft
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
@@ -8,7 +9,7 @@ import (
 )
 
 func (fact *ApproveFact) unmarshal(enc encoder.Encoder, sd string, bit []byte) error {
-	e := util.StringError("failed to unmarshal ApproveFact")
+	e := util.StringError(utils.ErrStringUnmarshal(*fact))
 
 	sender, err := base.DecodeAddress(sd, enc)
 	if err != nil {
@@ -16,16 +17,16 @@ func (fact *ApproveFact) unmarshal(enc encoder.Encoder, sd string, bit []byte) e
 	}
 	fact.sender = sender
 
-	hit, err := enc.DecodeSlice(bit)
+	hits, err := enc.DecodeSlice(bit)
 	if err != nil {
 		return e.Wrap(err)
 	}
 
-	items := make([]ApproveItem, len(hit))
-	for i, hinter := range hit {
+	items := make([]ApproveItem, len(hits))
+	for i, hinter := range hits {
 		item, ok := hinter.(ApproveItem)
 		if !ok {
-			return e.Wrap(errors.Errorf("expected ApproveItem, not %T", hinter))
+			return e.Wrap(errors.Errorf(utils.ErrStringTypeCast(ApproveItem{}, hinter)))
 		}
 
 		items[i] = item

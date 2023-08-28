@@ -1,6 +1,7 @@
 package nft
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
@@ -12,14 +13,13 @@ func (fact *MintFact) unmarshal(
 	sd string,
 	bits []byte,
 ) error {
-	e := util.StringError("failed to unmarshal MintFact")
+	e := util.StringError(utils.ErrStringUnmarshal(*fact))
 
-	switch sender, err := base.DecodeAddress(sd, enc); {
-	case err != nil:
+	sender, err := base.DecodeAddress(sd, enc)
+	if err != nil {
 		return e.Wrap(err)
-	default:
-		fact.sender = sender
 	}
+	fact.sender = sender
 
 	hits, err := enc.DecodeSlice(bits)
 	if err != nil {
@@ -30,7 +30,7 @@ func (fact *MintFact) unmarshal(
 	for i, hinter := range hits {
 		item, ok := hinter.(MintItem)
 		if !ok {
-			return e.Wrap(errors.Errorf("expected MintItem, not %T", hinter))
+			return e.Wrap(errors.Errorf(utils.ErrStringTypeCast(MintItem{}, hinter)))
 		}
 
 		items[i] = item

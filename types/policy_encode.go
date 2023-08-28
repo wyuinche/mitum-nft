@@ -1,13 +1,14 @@
 package types
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 
-func (p *CollectionPolicy) unmarshal(
+func (p *Policy) unmarshal(
 	enc encoder.Encoder,
 	ht hint.Hint,
 	nm string,
@@ -15,7 +16,7 @@ func (p *CollectionPolicy) unmarshal(
 	uri string,
 	bws []string,
 ) error {
-	e := util.StringError("failed to unmarshal CollectionPoicy")
+	e := util.StringError(utils.ErrStringUnmarshal(*p))
 
 	p.BaseHinter = hint.NewBaseHinter(ht)
 	p.name = CollectionName(nm)
@@ -23,12 +24,12 @@ func (p *CollectionPolicy) unmarshal(
 	p.uri = URI(uri)
 
 	whitelist := make([]base.Address, len(bws))
-	for i, bw := range bws {
-		white, err := base.DecodeAddress(bw, enc)
+	for i, w := range bws {
+		a, err := base.DecodeAddress(w, enc)
 		if err != nil {
 			return e.Wrap(err)
 		}
-		whitelist[i] = white
+		whitelist[i] = a
 	}
 	p.whitelist = whitelist
 

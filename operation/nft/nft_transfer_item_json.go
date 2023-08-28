@@ -2,7 +2,8 @@ package nft
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -10,11 +11,11 @@ import (
 
 type NFTTransferItemJSONMarshaler struct {
 	hint.BaseHinter
-	Contract   mitumbase.Address `json:"contract"`
-	Collection types.ContractID  `json:"collection"`
-	Receiver   mitumbase.Address `json:"receiver"`
-	NFTidx     uint64            `json:"nft"`
-	Currency   types.CurrencyID  `json:"currency"`
+	Contract   base.Address     `json:"contract"`
+	Collection types.ContractID `json:"collection"`
+	Receiver   base.Address     `json:"receiver"`
+	IDX        uint64           `json:"nftidx"`
+	Currency   types.CurrencyID `json:"currency"`
 }
 
 func (it NFTTransferItem) MarshalJSON() ([]byte, error) {
@@ -23,7 +24,7 @@ func (it NFTTransferItem) MarshalJSON() ([]byte, error) {
 		Contract:   it.contract,
 		Collection: it.collection,
 		Receiver:   it.receiver,
-		NFTidx:     it.nft,
+		IDX:        it.idx,
 		Currency:   it.currency,
 	})
 }
@@ -33,17 +34,17 @@ type NFTTransferItemJSONUnmarshaler struct {
 	Contract   string    `json:"contract"`
 	Collection string    `json:"collection"`
 	Receiver   string    `json:"receiver"`
-	NFTidx     uint64    `json:"nft"`
+	IDX        uint64    `json:"nftidx"`
 	Currency   string    `json:"currency"`
 }
 
 func (it *NFTTransferItem) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of NFTTransferItem")
+	e := util.StringError(utils.ErrStringDecodeJSON(*it))
 
 	var u NFTTransferItemJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}
 
-	return it.unmarshal(enc, u.Hint, u.Contract, u.Collection, u.Receiver, u.NFTidx, u.Currency)
+	return it.unmarshal(enc, u.Hint, u.Contract, u.Collection, u.Receiver, u.IDX, u.Currency)
 }

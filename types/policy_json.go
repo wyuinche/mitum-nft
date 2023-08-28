@@ -7,7 +7,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 
-type CollectionPolicyJSONMarshaler struct {
+type PolicyJSONMarshaler struct {
 	hint.BaseHinter
 	Name      CollectionName   `json:"name"`
 	Royalty   PaymentParameter `json:"royalty"`
@@ -15,8 +15,8 @@ type CollectionPolicyJSONMarshaler struct {
 	Whitelist []base.Address   `json:"whitelist"`
 }
 
-func (p CollectionPolicy) MarshalJSON() ([]byte, error) {
-	return util.MarshalJSON(CollectionPolicyJSONMarshaler{
+func (p Policy) MarshalJSON() ([]byte, error) {
+	return util.MarshalJSON(PolicyJSONMarshaler{
 		BaseHinter: p.BaseHinter,
 		Name:       p.name,
 		Royalty:    p.royalty,
@@ -25,7 +25,7 @@ func (p CollectionPolicy) MarshalJSON() ([]byte, error) {
 	})
 }
 
-type CollectionPolicyJSONUnmarshaler struct {
+type PolicyJSONUnmarshaler struct {
 	Hint      hint.Hint `json:"_hint"`
 	Name      string    `json:"name"`
 	Royalty   uint      `json:"royalty"`
@@ -33,10 +33,10 @@ type CollectionPolicyJSONUnmarshaler struct {
 	Whitelist []string  `json:"whitelist"`
 }
 
-func (p *CollectionPolicy) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of CollectionPolicy")
+func (p *Policy) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
+	e := util.StringError("failed to decode json of Policy")
 
-	var u CollectionPolicyJSONUnmarshaler
+	var u PolicyJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}

@@ -1,10 +1,11 @@
 package digest
 
 import (
-	"github.com/ProtoconNet/mitum-nft/v2/state"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
-	"go.mongodb.org/mongo-driver/mongo"
 	"strconv"
+
+	"github.com/ProtoconNet/mitum-nft/v2/state"
+	base "github.com/ProtoconNet/mitum2/base"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (bs *BlockSession) prepareNFTs() error {
@@ -19,30 +20,27 @@ func (bs *BlockSession) prepareNFTs() error {
 
 	for i := range bs.sts {
 		st := bs.sts[i]
-		stateKey, err := state.ParseNFTStateKey(st.Key())
-		if err != nil {
-			continue
-		}
-		switch stateKey {
-		case state.CollectionKey:
+
+		switch k := st.Key(); {
+		case state.IsStateDesignKey(k):
 			j, err := bs.handleNFTCollectionState(st)
 			if err != nil {
 				return err
 			}
 			nftCollectionModels = append(nftCollectionModels, j...)
-		case state.OperatorsKey:
+		case state.IsStateOperatorsBook(k):
 			j, err := bs.handleNFTOperatorsState(st)
 			if err != nil {
 				return err
 			}
 			nftOperatorModels = append(nftOperatorModels, j...)
-		case state.NFTBoxKey:
+		case state.IsStateNFTBoxKey(k):
 			j, err := bs.handleNFTBoxState(st)
 			if err != nil {
 				return err
 			}
 			nftBoxModels = append(nftBoxModels, j...)
-		case state.NFTKey:
+		case state.IsStateNFTKey(k):
 			j, nft, err := bs.handleNFTState(st)
 			if err != nil {
 				return err
@@ -62,7 +60,7 @@ func (bs *BlockSession) prepareNFTs() error {
 	return nil
 }
 
-func (bs *BlockSession) handleNFTCollectionState(st mitumbase.State) ([]mongo.WriteModel, error) {
+func (bs *BlockSession) handleNFTCollectionState(st base.State) ([]mongo.WriteModel, error) {
 	if nftCollectionDoc, err := NewNFTCollectionDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
@@ -72,7 +70,7 @@ func (bs *BlockSession) handleNFTCollectionState(st mitumbase.State) ([]mongo.Wr
 	}
 }
 
-func (bs *BlockSession) handleNFTOperatorsState(st mitumbase.State) ([]mongo.WriteModel, error) {
+func (bs *BlockSession) handleNFTOperatorsState(st base.State) ([]mongo.WriteModel, error) {
 	if nftCollectionDoc, err := NewNFTOperatorDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
@@ -82,7 +80,7 @@ func (bs *BlockSession) handleNFTOperatorsState(st mitumbase.State) ([]mongo.Wri
 	}
 }
 
-func (bs *BlockSession) handleNFTState(st mitumbase.State) ([]mongo.WriteModel, uint64, error) {
+func (bs *BlockSession) handleNFTState(st base.State) ([]mongo.WriteModel, uint64, error) {
 	if nftDoc, err := NewNFTDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, 0, err
 	} else {
@@ -92,22 +90,12 @@ func (bs *BlockSession) handleNFTState(st mitumbase.State) ([]mongo.WriteModel, 
 	}
 }
 
-func (bs *BlockSession) handleNFTBoxState(st mitumbase.State) ([]mongo.WriteModel, error) {
+func (bs *BlockSession) handleNFTBoxState(st base.State) ([]mongo.WriteModel, error) {
 	if nftBoxDoc, err := NewNFTBoxDoc(st, bs.st.DatabaseEncoder()); err != nil {
 		return nil, err
 	} else {
 		return []mongo.WriteModel{
 			mongo.NewInsertOneModel().SetDocument(nftBoxDoc),
-		}, nil
-	}
-}
-
-func (bs *BlockSession) handleNFTLastIndexState(st mitumbase.State) ([]mongo.WriteModel, error) {
-	if nftLastIndexDoc, err := NewNFTLastIndexDoc(st, bs.st.DatabaseEncoder()); err != nil {
-		return nil, err
-	} else {
-		return []mongo.WriteModel{
-			mongo.NewInsertOneModel().SetDocument(nftLastIndexDoc),
 		}, nil
 	}
 }

@@ -1,9 +1,11 @@
 package types
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
+	util "github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/pkg/errors"
 )
 
 var SignerHint = hint.MustNewHint("mitum-nft-signer-v0.0.1")
@@ -26,55 +28,53 @@ func NewSigner(account base.Address, share uint, signed bool) Signer {
 	}
 }
 
-func (sgn Signer) IsValid([]byte) error {
-	if err := util.CheckIsValiders(nil, false, sgn.BaseHinter, sgn.account); err != nil {
-		return err
+func (s Signer) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(s))
+
+	if err := util.CheckIsValiders(nil, false,
+		s.BaseHinter,
+		s.account,
+	); err != nil {
+		return e.Wrap(err)
 	}
 
-	if sgn.share > MaxSignerShare {
-		return util.ErrInvalid.Errorf("share over max, %d > %d", sgn.share, MaxSignerShare)
+	if s.share > MaxSignerShare {
+		return e.Wrap(errors.Errorf("invalid signer share, %d > max(%d)", s.share, MaxSignerShare))
 	}
 
 	return nil
 }
 
-func (sgn Signer) Bytes() []byte {
-	bs := []byte{}
-	if sgn.signed {
-		bs = append(bs, 1)
-	} else {
-		bs = append(bs, 0)
-	}
-
+func (s Signer) Bytes() []byte {
 	return util.ConcatBytesSlice(
-		sgn.account.Bytes(),
-		util.UintToBytes(sgn.share),
-		bs,
+		s.account.Bytes(),
+		util.UintToBytes(s.share),
+		utils.BoolToByteSlice(s.signed),
 	)
 }
 
-func (sgn Signer) Account() base.Address {
-	return sgn.account
+func (s Signer) Account() base.Address {
+	return s.account
 }
 
-func (sgn Signer) Share() uint {
-	return sgn.share
+func (s Signer) Share() uint {
+	return s.share
 }
 
-func (sgn Signer) Signed() bool {
-	return sgn.signed
+func (s Signer) Signed() bool {
+	return s.signed
 }
 
-func (sgn Signer) Equal(csigner Signer) bool {
-	if sgn.Share() != csigner.Share() {
+func (s Signer) Equal(c Signer) bool {
+	if s.Share() != c.Share() {
 		return false
 	}
 
-	if !sgn.Account().Equal(csigner.Account()) {
+	if !s.Account().Equal(c.Account()) {
 		return false
 	}
 
-	if sgn.Signed() != csigner.Signed() {
+	if s.Signed() != c.Signed() {
 		return false
 	}
 

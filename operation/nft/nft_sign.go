@@ -4,10 +4,12 @@ import (
 	"strconv"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -15,18 +17,15 @@ var (
 	NFTSignHint     = hint.MustNewHint("mitum-nft-sign-operation-v0.0.1")
 )
 
-var MaxNFTSignItems = 10
-
 type NFTSignFact struct {
-	mitumbase.BaseFact
-	sender mitumbase.Address
+	base.BaseFact
+	sender base.Address
 	items  []NFTSignItem
 }
 
-func NewNFTSignFact(token []byte, sender mitumbase.Address, items []NFTSignItem) NFTSignFact {
-	bf := mitumbase.NewBaseFact(NFTSignFactHint, token)
+func NewNFTSignFact(token []byte, sender base.Address, items []NFTSignItem) NFTSignFact {
 	fact := NFTSignFact{
-		BaseFact: bf,
+		BaseFact: base.NewBaseFact(NFTSignFactHint, token),
 		sender:   sender,
 		items:    items,
 	}
@@ -36,33 +35,38 @@ func NewNFTSignFact(token []byte, sender mitumbase.Address, items []NFTSignItem)
 }
 
 func (fact NFTSignFact) IsValid(b []byte) error {
-	if err := fact.BaseHinter.IsValid(nil); err != nil {
-		return err
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(fact))
+
+	if err := util.CheckIsValiders(nil, false,
+		fact.BaseHinter,
+		fact.sender,
+	); err != nil {
+		return e.Wrap(err)
 	}
 
 	if err := common.IsValidOperationFact(fact, b); err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	if l := len(fact.items); l < 1 {
-		return util.ErrInvalid.Errorf("empty items for NFTSignFact")
-	} else if l > int(MaxNFTSignItems) {
-		return util.ErrInvalid.Errorf("items over allowed, %d > %d", l, MaxNFTSignItems)
-	}
-
-	if err := fact.sender.IsValid(nil); err != nil {
-		return err
+		return e.Wrap(errors.Errorf("empty items, %T", fact))
+	} else if l > int(MaxItems) {
+		return e.Wrap(errors.Errorf("invalid length of items, %d > max(%d)", l, MaxItems))
 	}
 
 	founds := map[string]struct{}{}
 	for _, item := range fact.items {
 		if err := item.IsValid(nil); err != nil {
-			return err
+			return e.Wrap(err)
 		}
 
-		nid := strconv.FormatUint(item.NFT(), 10)
+		if item.contract.Equal(fact.sender) {
+			return e.Wrap(errors.Errorf("contract address is same with sender, %s", fact.sender))
+		}
+
+		nid := strconv.FormatUint(item.NFTIdx(), 10)
 		if _, found := founds[nid]; found {
-			return util.ErrInvalid.Errorf("duplicate nft found, %q", item.NFT())
+			return e.Wrap(errors.Errorf(utils.ErrStringDuplicate("nft idx", nid)))
 		}
 
 		founds[nid] = struct{}{}
@@ -80,34 +84,28 @@ func (fact NFTSignFact) GenerateHash() util.Hash {
 }
 
 func (fact NFTSignFact) Bytes() []byte {
-	is := make([][]byte, len(fact.items))
+	bs := make([][]byte, len(fact.items))
 	for i := range fact.items {
-		is[i] = fact.items[i].Bytes()
+		bs[i] = fact.items[i].Bytes()
 	}
 
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
-		util.ConcatBytesSlice(is...),
+		util.ConcatBytesSlice(bs...),
 	)
 }
 
-func (fact NFTSignFact) Token() mitumbase.Token {
+func (fact NFTSignFact) Token() base.Token {
 	return fact.BaseFact.Token()
 }
 
-func (fact NFTSignFact) Sender() mitumbase.Address {
+func (fact NFTSignFact) Sender() base.Address {
 	return fact.sender
 }
 
 func (fact NFTSignFact) Items() []NFTSignItem {
 	return fact.items
-}
-
-func (fact NFTSignFact) Addresses() ([]mitumbase.Address, error) {
-	as := make([]mitumbase.Address, 1)
-	as[0] = fact.sender
-	return as, nil
 }
 
 type NFTSign struct {
@@ -118,7 +116,7 @@ func NewNFTSign(fact NFTSignFact) (NFTSign, error) {
 	return NFTSign{BaseOperation: common.NewBaseOperation(NFTSignHint, fact)}, nil
 }
 
-func (op *NFTSign) HashSign(priv mitumbase.Privatekey, networkID mitumbase.NetworkID) error {
+func (op *NFTSign) HashSign(priv base.Privatekey, networkID base.NetworkID) error {
 	err := op.Sign(priv, networkID)
 	if err != nil {
 		return err

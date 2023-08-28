@@ -20,8 +20,7 @@ var AddedHinters = []encoder.DecodeDetail{
 	{Hint: types.NFTHint, Instance: types.NFT{}},
 	{Hint: types.DesignHint, Instance: types.Design{}},
 	{Hint: types.OperatorsBookHint, Instance: types.OperatorsBook{}},
-	{Hint: types.CollectionPolicyHint, Instance: types.CollectionPolicy{}},
-	{Hint: types.CollectionDesignHint, Instance: types.CollectionDesign{}},
+	{Hint: types.PolicyHint, Instance: types.Policy{}},
 	{Hint: types.NFTBoxHint, Instance: types.NFTBox{}},
 
 	{Hint: nft.CollectionRegisterHint, Instance: nft.CollectionRegister{}},
@@ -41,7 +40,7 @@ var AddedHinters = []encoder.DecodeDetail{
 	{Hint: state.NFTStateValueHint, Instance: state.NFTStateValue{}},
 	{Hint: state.NFTBoxStateValueHint, Instance: state.NFTBoxStateValue{}},
 	{Hint: state.OperatorsBookStateValueHint, Instance: state.OperatorsBookStateValue{}},
-	{Hint: state.CollectionStateValueHint, Instance: state.CollectionStateValue{}},
+	{Hint: state.DesignStateValueHint, Instance: state.DesignStateValue{}},
 }
 
 var AddedSupportedHinters = []encoder.DecodeDetail{

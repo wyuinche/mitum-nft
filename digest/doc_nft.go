@@ -1,13 +1,14 @@
 package digest
 
 import (
+	"strconv"
+
 	mongodbstorage "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
 	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/encoder"
-	"strconv"
 )
 
 type NFTCollectionDoc struct {
@@ -17,7 +18,7 @@ type NFTCollectionDoc struct {
 }
 
 func NewNFTCollectionDoc(st base.State, enc encoder.Encoder) (NFTCollectionDoc, error) {
-	de, err := state.StateCollectionValue(st)
+	de, err := state.StateDesignValue(st)
 	if err != nil {
 		return NFTCollectionDoc{}, err
 	}
@@ -29,7 +30,7 @@ func NewNFTCollectionDoc(st base.State, enc encoder.Encoder) (NFTCollectionDoc, 
 	return NFTCollectionDoc{
 		BaseDoc: b,
 		st:      st,
-		de:      *de,
+		de:      de,
 	}, nil
 }
 
@@ -73,7 +74,7 @@ func NewNFTDoc(st base.State, enc encoder.Encoder) (*NFTDoc, error) {
 	return &NFTDoc{
 		BaseDoc:   b,
 		st:        st,
-		nft:       *nft,
+		nft:       nft,
 		addresses: nft.Addresses(),
 		owner:     nft.Owner().String(),
 	}, nil
@@ -85,7 +86,7 @@ func (doc NFTDoc) MarshalBSON() ([]byte, error) {
 		return nil, err
 	}
 
-	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
+	parsedKey, err := state.ParseStateKey(doc.st.Key())
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +121,7 @@ func NewNFTOperatorDoc(st base.State, enc encoder.Encoder) (*NFTOperatorDoc, err
 	return &NFTOperatorDoc{
 		BaseDoc:   b,
 		st:        st,
-		operators: *operators,
+		operators: operators,
 	}, nil
 }
 
@@ -129,7 +130,7 @@ func (doc NFTOperatorDoc) MarshalBSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
+	parsedKey, err := state.ParseStateKey(doc.st.Key())
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +172,7 @@ func (doc NFTBoxDoc) MarshalBSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
+	parsedKey, err := state.ParseStateKey(doc.st.Key())
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +214,7 @@ func (doc NFTLastIndexDoc) MarshalBSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	parsedKey, err := state.ParseStateKey(doc.st.Key(), state.NFTPrefix)
+	parsedKey, err := state.ParseStateKey(doc.st.Key())
 	if err != nil {
 		return nil, err
 	}

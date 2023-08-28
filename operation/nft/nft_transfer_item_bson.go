@@ -4,6 +4,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
@@ -15,7 +16,7 @@ func (it NFTTransferItem) MarshalBSON() ([]byte, error) {
 			"contract":   it.contract,
 			"collection": it.collection,
 			"receiver":   it.receiver,
-			"nft":        it.nft,
+			"nftidx":     it.idx,
 			"currency":   it.currency,
 		},
 	)
@@ -26,12 +27,12 @@ type NFTTransferItemBSONUnmarshaler struct {
 	Contract   string `bson:"contract"`
 	Collection string `bson:"collection"`
 	Receiver   string `bson:"receiver"`
-	NFTidx     uint64 `bson:"nft"`
+	IDX        uint64 `bson:"nftidx"`
 	Currency   string `bson:"currency"`
 }
 
 func (it *NFTTransferItem) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("failed to decode bson of NFTTransferItem")
+	e := util.StringError(utils.ErrStringDecodeBSON(*it))
 
 	var u NFTTransferItemBSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
@@ -43,5 +44,5 @@ func (it *NFTTransferItem) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 		return e.Wrap(err)
 	}
 
-	return it.unmarshal(enc, ht, u.Contract, u.Collection, u.Receiver, u.NFTidx, u.Currency)
+	return it.unmarshal(enc, ht, u.Contract, u.Collection, u.Receiver, u.IDX, u.Currency)
 }

@@ -2,40 +2,31 @@ package cmds
 
 import (
 	"context"
-	"fmt"
 
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
-	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
 )
 
 type CollectionRegisterCommand struct {
-	BaseCommand
-	currencycmds.OperationFlags
-	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract account to register policy" required:"true"`
-	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
-	Name       string                      `arg:"" name:"name" help:"collection name" required:"true"`
-	Royalty    uint                        `arg:"" name:"royalty" help:"royalty parameter; 0 <= royalty param < 100" required:"true"`
-	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	URI        string                      `name:"uri" help:"collection uri" optional:""`
-	White      currencycmds.AddressFlag    `name:"white" help:"whitelisted address" optional:""`
-	sender     mitumbase.Address
-	contract   mitumbase.Address
-	collection currencytypes.ContractID
-	name       types.CollectionName
-	royalty    types.PaymentParameter
-	uri        types.URI
-	whitelist  []mitumbase.Address
+	OperationCommand
+	Name      string                   `arg:"" name:"name" help:"collection name" required:"true"`
+	Royalty   uint                     `arg:"" name:"royalty" help:"royalty parameter; 0 <= royalty param < 100" required:"true"`
+	URI       string                   `name:"uri" help:"collection uri" optional:""`
+	White     currencycmds.AddressFlag `name:"white" help:"whitelisted address" optional:""`
+	name      types.CollectionName
+	royalty   types.PaymentParameter
+	uri       types.URI
+	whitelist []base.Address
 }
 
 func NewCollectionRegisterCommand() CollectionRegisterCommand {
-	cmd := NewBaseCommand()
-	return CollectionRegisterCommand{BaseCommand: *cmd}
+	cmd := NewOperationCommand()
+	return CollectionRegisterCommand{OperationCommand: *cmd}
 }
 
 func (cmd *CollectionRegisterCommand) Run(pctx context.Context) error {
@@ -54,43 +45,24 @@ func (cmd *CollectionRegisterCommand) Run(pctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(cmd.Out)
+
 	currencycmds.PrettyPrint(cmd.Out, op)
 
 	return nil
 }
 
 func (cmd *CollectionRegisterCommand) parseFlags() error {
-	if err := cmd.OperationFlags.IsValid(nil); err != nil {
+	if err := cmd.OperationCommand.parseFlags(); err != nil {
 		return err
 	}
 
-	if a, err := cmd.Sender.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid sender address format; %q", cmd.Sender)
-	} else {
-		cmd.sender = a
-	}
-
-	if a, err := cmd.Contract.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid contract address format; %q", cmd.Contract)
-	} else {
-		cmd.contract = a
-	}
-
-	var white mitumbase.Address = nil
+	var white base.Address = nil
 	if cmd.White.String() != "" {
 		if a, err := cmd.White.Encode(enc); err != nil {
 			return errors.Wrapf(err, "invalid whitelist address format, %q", cmd.White)
 		} else {
 			white = a
 		}
-	}
-
-	collection := currencytypes.ContractID(cmd.Collection)
-	if err := collection.IsValid(nil); err != nil {
-		return err
-	} else {
-		cmd.collection = collection
 	}
 
 	name := types.CollectionName(cmd.Name)
@@ -114,18 +86,17 @@ func (cmd *CollectionRegisterCommand) parseFlags() error {
 		cmd.uri = uri
 	}
 
-	whitelist := []mitumbase.Address{}
+	whitelist := []base.Address{}
 	if white != nil {
 		whitelist = append(whitelist, white)
-	} else {
-		cmd.whitelist = whitelist
 	}
+	cmd.whitelist = whitelist
 
 	return nil
 }
 
-func (cmd *CollectionRegisterCommand) createOperation() (mitumbase.Operation, error) {
-	e := util.StringError("failed to create collection-register operation")
+func (cmd *CollectionRegisterCommand) createOperation() (base.Operation, error) {
+	e := util.StringError(utils.ErrStringCreate("collection-register operation"))
 
 	fact := nft.NewCollectionRegisterFact(
 		[]byte(cmd.Token),
@@ -143,6 +114,7 @@ func (cmd *CollectionRegisterCommand) createOperation() (mitumbase.Operation, er
 	if err != nil {
 		return nil, e.Wrap(err)
 	}
+
 	err = op.HashSign(cmd.Privatekey, cmd.NetworkID.NetworkID())
 	if err != nil {
 		return nil, e.Wrap(err)

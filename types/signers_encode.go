@@ -1,38 +1,38 @@
 package types
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/hint"
-	"github.com/pkg/errors"
 )
 
-func (sgns *Signers) unmarshal(
+func (s *Signers) unmarshal(
 	enc encoder.Encoder,
 	ht hint.Hint,
 	tt uint,
-	bsns []byte,
+	bs []byte,
 ) error {
-	e := util.StringError("failed to unmarshal Signers")
+	e := util.StringError(utils.ErrStringUnmarshal(*s))
 
-	sgns.BaseHinter = hint.NewBaseHinter(ht)
-	sgns.total = tt
+	s.BaseHinter = hint.NewBaseHinter(ht)
+	s.total = tt
 
-	hinters, err := enc.DecodeSlice(bsns)
+	hinters, err := enc.DecodeSlice(bs)
 	if err != nil {
 		return e.Wrap(err)
 	}
 
 	signers := make([]Signer, len(hinters))
-	for i, hinter := range hinters {
-		signer, ok := hinter.(Signer)
+	for i, h := range hinters {
+		signer, ok := h.(Signer)
 		if !ok {
-			return e.Wrap(errors.Errorf("expected Signer, not %T", hinter))
+			return e.Wrap(util.ErrInvalid.Errorf("expected %T, not %T", Signer{}, h))
 		}
 
 		signers[i] = signer
 	}
-	sgns.signers = signers
+	s.signers = signers
 
 	return nil
 }

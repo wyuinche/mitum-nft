@@ -1,7 +1,8 @@
 package nft
 
 import (
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/pkg/errors"
@@ -12,9 +13,9 @@ func (fact *DelegateFact) unmarshal(
 	sd string,
 	bits []byte,
 ) error {
-	e := util.StringError("failed to unmarshal DelegateFact")
+	e := util.StringError(utils.ErrStringUnmarshal(*fact))
 
-	sender, err := mitumbase.DecodeAddress(sd, enc)
+	sender, err := base.DecodeAddress(sd, enc)
 	if err != nil {
 		return e.Wrap(err)
 	}
@@ -29,7 +30,7 @@ func (fact *DelegateFact) unmarshal(
 	for i, hinter := range hits {
 		item, ok := hinter.(DelegateItem)
 		if !ok {
-			return e.Wrap(errors.Errorf("expected DelegateItem, not %T", hinter))
+			return e.Wrap(errors.Errorf(utils.ErrStringTypeCast(DelegateItem{}, hinter)))
 		}
 
 		items[i] = item

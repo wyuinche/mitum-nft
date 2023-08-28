@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sort"
 
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
@@ -18,22 +19,18 @@ type NFTBox struct {
 }
 
 func NewNFTBox(nfts []uint64) NFTBox {
-	var ns []uint64
-
-	if nfts != nil {
-		ns = nfts
+	if nfts == nil {
+		nfts = []uint64{}
 	}
-
-	return NFTBox{BaseHinter: hint.NewBaseHinter(NFTBoxHint), nfts: ns}
+	return NFTBox{BaseHinter: hint.NewBaseHinter(NFTBoxHint), nfts: nfts}
 }
 
 func (nbx NFTBox) Bytes() []byte {
-	bns := make([][]byte, len(nbx.nfts))
+	bs := make([][]byte, len(nbx.nfts))
 	for i, n := range nbx.nfts {
-		bns[i] = util.Uint64ToBytes(n)
+		bs[i] = util.Uint64ToBytes(n)
 	}
-
-	return util.ConcatBytesSlice(bns...)
+	return util.ConcatBytesSlice(bs...)
 }
 
 func (nbx NFTBox) Hint() hint.Hint {
@@ -49,18 +46,24 @@ func (nbx NFTBox) GenerateHash() util.Hash {
 }
 
 func (nbx NFTBox) IsEmpty() bool {
-	return len(nbx.nfts) < 1
+	return len(nbx.nfts) == 0
 }
 
 func (nbx NFTBox) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(nbx))
+
+	if err := nbx.BaseHinter.IsValid(nil); err != nil {
+		return e.Wrap(err)
+	}
+
 	return nil
 }
 
-func (nbx NFTBox) Equal(b NFTBox) bool {
+func (nbx NFTBox) Equal(c NFTBox) bool {
 	nbx.Sort(true)
-	b.Sort(true)
+	c.Sort(true)
 	for i := range nbx.nfts {
-		if !(nbx.nfts[i] == (b.nfts[i])) {
+		if !(nbx.nfts[i] == c.nfts[i]) {
 			return false
 		}
 	}
@@ -77,9 +80,6 @@ func (nbx *NFTBox) Sort(ascending bool) {
 }
 
 func (nbx NFTBox) Exists(id uint64) bool {
-	if len(nbx.nfts) < 1 {
-		return false
-	}
 	for _, n := range nbx.nfts {
 		if id == n {
 			return true
@@ -87,15 +87,6 @@ func (nbx NFTBox) Exists(id uint64) bool {
 	}
 	return false
 }
-
-//func (nbx NFTBox) Get(id uint64) (*nft.NFTID, error) {
-//	for _, n := range nbx.nfts {
-//		if id.Equal(n) {
-//			return &n, nil
-//		}
-//	}
-//	return nil, errors.Errorf("nft not found in NFTBox, %q", id)
-//}
 
 func (nbx *NFTBox) Append(n uint64) error {
 	if nbx.Exists(n) {

@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 )
 
 type MintFactJSONMarshaler struct {
-	mitumbase.BaseFactJSONMarshaler
-	Sender mitumbase.Address `json:"sender"`
-	Items  []MintItem        `json:"items"`
+	base.BaseFactJSONMarshaler
+	Sender base.Address `json:"sender"`
+	Items  []MintItem   `json:"items"`
 }
 
 func (fact MintFact) MarshalJSON() ([]byte, error) {
@@ -24,13 +25,13 @@ func (fact MintFact) MarshalJSON() ([]byte, error) {
 }
 
 type MintFactJSONUnmarshaler struct {
-	mitumbase.BaseFactJSONUnmarshaler
+	base.BaseFactJSONUnmarshaler
 	Sender string          `json:"sender"`
 	Items  json.RawMessage `json:"items"`
 }
 
 func (fact *MintFact) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of MintFact")
+	e := util.StringError(utils.ErrStringDecodeJSON(*fact))
 
 	var u MintFactJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
@@ -53,7 +54,7 @@ func (op Mint) MarshalJSON() ([]byte, error) {
 }
 
 func (op *Mint) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of Mint")
+	e := util.StringError(utils.ErrStringDecodeJSON(*op))
 
 	var ubo common.BaseOperation
 	if err := ubo.DecodeJSON(b, enc); err != nil {

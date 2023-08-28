@@ -1,7 +1,8 @@
 package nft
 
 import (
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/pkg/errors"
@@ -12,9 +13,9 @@ func (fact *NFTSignFact) unmarshal(
 	sd string,
 	bits []byte,
 ) error {
-	e := util.StringError("failed to unmarshal NFTSignFact")
+	e := util.StringError(utils.ErrStringUnmarshal(*fact))
 
-	sender, err := mitumbase.DecodeAddress(sd, enc)
+	sender, err := base.DecodeAddress(sd, enc)
 	if err != nil {
 		return e.Wrap(err)
 	}
@@ -22,14 +23,14 @@ func (fact *NFTSignFact) unmarshal(
 
 	hits, err := enc.DecodeSlice(bits)
 	if err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	items := make([]NFTSignItem, len(hits))
 	for i, hinter := range hits {
 		item, ok := hinter.(NFTSignItem)
 		if !ok {
-			return e.Wrap(errors.Errorf("expected SignItem, not %T", hinter))
+			return e.Wrap(errors.Errorf(utils.ErrStringTypeCast(NFTSignItem{}, hinter)))
 		}
 
 		items[i] = item

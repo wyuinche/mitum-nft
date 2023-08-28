@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 
 	"github.com/ProtoconNet/mitum-nft/v2/types"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -14,7 +15,7 @@ import (
 
 type MintItemJSONMarshaler struct {
 	hint.BaseHinter
-	Contract   mitumbase.Address        `json:"contract"`
+	Contract   base.Address             `json:"contract"`
 	Collection currencytypes.ContractID `json:"collection"`
 	Hash       types.NFTHash            `json:"hash"`
 	Uri        types.URI                `json:"uri"`
@@ -45,7 +46,7 @@ type MintItemJSONUnmarshaler struct {
 }
 
 func (it *MintItem) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of MintItem")
+	e := util.StringError(utils.ErrStringDecodeJSON(*it))
 
 	var u MintItemJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {

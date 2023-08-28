@@ -4,10 +4,12 @@ import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -16,31 +18,29 @@ var (
 )
 
 type CollectionPolicyUpdaterFact struct {
-	mitumbase.BaseFact
-	sender     mitumbase.Address
-	contract   mitumbase.Address
+	base.BaseFact
+	sender     base.Address
+	contract   base.Address
 	collection currencytypes.ContractID
 	name       types.CollectionName
 	royalty    types.PaymentParameter
 	uri        types.URI
-	whitelist  []mitumbase.Address
+	whitelist  []base.Address
 	currency   currencytypes.CurrencyID
 }
 
 func NewCollectionPolicyUpdaterFact(
 	token []byte,
-	sender, contract mitumbase.Address,
+	sender, contract base.Address,
 	collection currencytypes.ContractID,
 	name types.CollectionName,
 	royalty types.PaymentParameter,
 	uri types.URI,
-	whitelist []mitumbase.Address,
+	whitelist []base.Address,
 	currency currencytypes.CurrencyID,
 ) CollectionPolicyUpdaterFact {
-	bf := mitumbase.NewBaseFact(CollectionPolicyUpdaterFactHint, token)
-
 	fact := CollectionPolicyUpdaterFact{
-		BaseFact:   bf,
+		BaseFact:   base.NewBaseFact(CollectionPolicyUpdaterFactHint, token),
 		sender:     sender,
 		contract:   contract,
 		collection: collection,
@@ -56,20 +56,15 @@ func NewCollectionPolicyUpdaterFact(
 }
 
 func (fact CollectionPolicyUpdaterFact) IsValid(b []byte) error {
-	if err := fact.BaseHinter.IsValid(nil); err != nil {
-		return err
-	}
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(fact))
 
 	if err := common.IsValidOperationFact(fact, b); err != nil {
-		return err
-	}
-
-	if l := len(fact.whitelist); l > types.MaxWhitelist {
-		return util.ErrInvalid.Errorf("whitelist over allowed, %d > %d", l, types.MaxWhitelist)
+		return e.Wrap(err)
 	}
 
 	if err := util.CheckIsValiders(
 		nil, false,
+		fact.BaseHinter,
 		fact.sender,
 		fact.contract,
 		fact.collection,
@@ -78,18 +73,32 @@ func (fact CollectionPolicyUpdaterFact) IsValid(b []byte) error {
 		fact.uri,
 		fact.currency,
 	); err != nil {
-		return err
+		return e.Wrap(err)
+	}
+
+	if l := len(fact.whitelist); l > types.MaxWhitelist {
+		return e.Wrap(errors.Errorf("invalid length of whitelist, %d > max(%d)", l, types.MaxWhitelist))
+	}
+
+	if fact.sender.Equal(fact.contract) {
+		return e.Wrap(errors.Errorf("contract address is same with sender, %s", fact.sender))
 	}
 
 	founds := map[string]struct{}{}
-	for _, white := range fact.whitelist {
-		if err := white.IsValid(nil); err != nil {
-			return err
+	for _, a := range fact.whitelist {
+		if err := a.IsValid(nil); err != nil {
+			return e.Wrap(err)
 		}
-		if _, found := founds[white.String()]; found {
-			return util.ErrInvalid.Errorf("duplicate whitelist account found, %q", white)
+
+		if fact.contract.Equal(a) {
+			return e.Wrap(errors.Errorf("contract address is same with whitelist account, %s", fact.contract))
 		}
-		founds[white.String()] = struct{}{}
+
+		if _, found := founds[a.String()]; found {
+			return e.Wrap(errors.Errorf(utils.ErrStringDuplicate("whitelist account", a.String())))
+		}
+
+		founds[a.String()] = struct{}{}
 	}
 
 	return nil
@@ -104,9 +113,9 @@ func (fact CollectionPolicyUpdaterFact) GenerateHash() util.Hash {
 }
 
 func (fact CollectionPolicyUpdaterFact) Bytes() []byte {
-	as := make([][]byte, len(fact.whitelist))
-	for i, white := range fact.whitelist {
-		as[i] = white.Bytes()
+	bs := make([][]byte, len(fact.whitelist))
+	for i, a := range fact.whitelist {
+		bs[i] = a.Bytes()
 	}
 
 	return util.ConcatBytesSlice(
@@ -118,19 +127,19 @@ func (fact CollectionPolicyUpdaterFact) Bytes() []byte {
 		fact.royalty.Bytes(),
 		fact.uri.Bytes(),
 		fact.currency.Bytes(),
-		util.ConcatBytesSlice(as...),
+		util.ConcatBytesSlice(bs...),
 	)
 }
 
-func (fact CollectionPolicyUpdaterFact) Token() mitumbase.Token {
+func (fact CollectionPolicyUpdaterFact) Token() base.Token {
 	return fact.BaseFact.Token()
 }
 
-func (fact CollectionPolicyUpdaterFact) Sender() mitumbase.Address {
+func (fact CollectionPolicyUpdaterFact) Sender() base.Address {
 	return fact.sender
 }
 
-func (fact CollectionPolicyUpdaterFact) Contract() mitumbase.Address {
+func (fact CollectionPolicyUpdaterFact) Contract() base.Address {
 	return fact.contract
 }
 
@@ -150,18 +159,12 @@ func (fact CollectionPolicyUpdaterFact) URI() types.URI {
 	return fact.uri
 }
 
-func (fact CollectionPolicyUpdaterFact) Whitelist() []mitumbase.Address {
+func (fact CollectionPolicyUpdaterFact) Whitelist() []base.Address {
 	return fact.whitelist
 }
 
 func (fact CollectionPolicyUpdaterFact) Currency() currencytypes.CurrencyID {
 	return fact.currency
-}
-
-func (fact CollectionPolicyUpdaterFact) Addresses() ([]mitumbase.Address, error) {
-	as := make([]mitumbase.Address, 1)
-	as[0] = fact.sender
-	return as, nil
 }
 
 type CollectionPolicyUpdater struct {
@@ -172,7 +175,7 @@ func NewCollectionPolicyUpdater(fact CollectionPolicyUpdaterFact) (CollectionPol
 	return CollectionPolicyUpdater{BaseOperation: common.NewBaseOperation(CollectionPolicyUpdaterHint, fact)}, nil
 }
 
-func (op *CollectionPolicyUpdater) HashSign(priv mitumbase.Privatekey, networkID mitumbase.NetworkID) error {
+func (op *CollectionPolicyUpdater) HashSign(priv base.Privatekey, networkID base.NetworkID) error {
 	err := op.Sign(priv, networkID)
 	if err != nil {
 		return err

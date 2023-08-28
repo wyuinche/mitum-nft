@@ -4,20 +4,21 @@ import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 )
 
 type CollectionRegisterFactJSONMarshaler struct {
-	mitumbase.BaseFactJSONMarshaler
-	Sender     mitumbase.Address        `json:"sender"`
-	Contract   mitumbase.Address        `json:"contract"`
+	base.BaseFactJSONMarshaler
+	Sender     base.Address             `json:"sender"`
+	Contract   base.Address             `json:"contract"`
 	Collection currencytypes.ContractID `json:"collection"`
 	Name       types.CollectionName     `json:"name"`
 	Royalty    types.PaymentParameter   `json:"royalty"`
 	URI        types.URI                `json:"uri"`
-	Whitelist  []mitumbase.Address      `json:"whitelist"`
+	Whitelist  []base.Address           `json:"whitelist"`
 	Currency   currencytypes.CurrencyID `json:"currency"`
 }
 
@@ -36,7 +37,7 @@ func (fact CollectionRegisterFact) MarshalJSON() ([]byte, error) {
 }
 
 type CollectionRegisterFactJSONUnmarshaler struct {
-	mitumbase.BaseFactJSONUnmarshaler
+	base.BaseFactJSONUnmarshaler
 	Sender     string   `json:"sender"`
 	Contract   string   `json:"contract"`
 	Collection string   `json:"collection"`
@@ -48,7 +49,7 @@ type CollectionRegisterFactJSONUnmarshaler struct {
 }
 
 func (fact *CollectionRegisterFact) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of CollectionRegisterFact")
+	e := util.StringError(utils.ErrStringDecodeJSON(*fact))
 
 	var u CollectionRegisterFactJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
@@ -71,7 +72,7 @@ func (op CollectionRegister) MarshalJSON() ([]byte, error) {
 }
 
 func (op *CollectionRegister) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of CurrecyRegister")
+	e := util.StringError(utils.ErrStringDecodeJSON(*op))
 
 	var ubo common.BaseOperation
 	if err := ubo.DecodeJSON(b, enc); err != nil {

@@ -3,23 +3,19 @@ package nft
 import (
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	"github.com/pkg/errors"
 
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
-
-type CollectionItem interface {
-	util.Byter
-	util.IsValider
-	Currency() currencytypes.CurrencyID
-}
 
 var MintItemHint = hint.MustNewHint("mitum-nft-mint-item-v0.0.1")
 
 type MintItem struct {
 	hint.BaseHinter
-	contract   mitumbase.Address
+	contract   base.Address
 	collection currencytypes.ContractID
 	hash       types.NFTHash
 	uri        types.URI
@@ -28,7 +24,7 @@ type MintItem struct {
 }
 
 func NewMintItem(
-	contract mitumbase.Address,
+	contract base.Address,
 	collection currencytypes.ContractID,
 	hash types.NFTHash,
 	uri types.URI,
@@ -58,10 +54,31 @@ func (it MintItem) Bytes() []byte {
 }
 
 func (it MintItem) IsValid([]byte) error {
-	return util.CheckIsValiders(nil, false, it.BaseHinter, it.collection, it.hash, it.uri, it.creators, it.currency)
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(it))
+
+	if err := util.CheckIsValiders(nil, false,
+		it.BaseHinter,
+		it.contract,
+		it.collection,
+		it.hash,
+		it.uri,
+		it.creators,
+		it.currency,
+	); err != nil {
+		return e.Wrap(err)
+	}
+
+	as := it.creators.Addresses()
+	for _, a := range as {
+		if a.Equal(it.contract) {
+			return e.Wrap(errors.Errorf("contract address is same with creator, %s", it.contract))
+		}
+	}
+
+	return nil
 }
 
-func (it MintItem) Contract() mitumbase.Address {
+func (it MintItem) Contract() base.Address {
 	return it.contract
 }
 
@@ -79,13 +96,6 @@ func (it MintItem) URI() types.URI {
 
 func (it MintItem) Creators() types.Signers {
 	return it.creators
-}
-
-func (it MintItem) Addresses() ([]mitumbase.Address, error) {
-	as := []mitumbase.Address{}
-	as = append(as, it.creators.Addresses()...)
-
-	return as, nil
 }
 
 func (it MintItem) Currency() currencytypes.CurrencyID {

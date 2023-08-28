@@ -2,30 +2,23 @@ package cmds
 
 import (
 	"context"
+
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
-	"github.com/pkg/errors"
 )
 
 type NFTSignCommand struct {
-	BaseCommand
-	currencycmds.OperationFlags
-	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
-	NFT        uint64                      `arg:"" name:"nft" help:"target nft; \"<collection>,<idx>\""`
-	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	sender     base.Address
-	contract   base.Address
-	collection types.ContractID
+	OperationCommand
+	NFT uint64 `arg:"" name:"nft" help:"target nft; \"<collection>,<idx>\""`
 }
 
 func NewNFTSignCommand() NFTSignCommand {
-	cmd := NewBaseCommand()
-	return NFTSignCommand{BaseCommand: *cmd}
+	cmd := NewOperationCommand()
+	return NFTSignCommand{OperationCommand: *cmd}
 }
 
 func (cmd *NFTSignCommand) Run(pctx context.Context) error { // nolint:dupl
@@ -51,20 +44,8 @@ func (cmd *NFTSignCommand) Run(pctx context.Context) error { // nolint:dupl
 }
 
 func (cmd *NFTSignCommand) parseFlags() error {
-	if err := cmd.OperationFlags.IsValid(nil); err != nil {
+	if err := cmd.OperationCommand.parseFlags(); err != nil {
 		return err
-	}
-
-	if a, err := cmd.Sender.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid sender address format, %q", cmd.Sender)
-	} else {
-		cmd.sender = a
-	}
-
-	if a, err := cmd.Contract.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid contract address format, %q", cmd.Contract)
-	} else {
-		cmd.contract = a
 	}
 
 	col := types.ContractID(cmd.Collection)
@@ -79,10 +60,9 @@ func (cmd *NFTSignCommand) parseFlags() error {
 }
 
 func (cmd *NFTSignCommand) createOperation() (base.Operation, error) {
-	e := util.StringError("failed to create nft-sign operation")
+	e := util.StringError(utils.ErrStringCreate("nft-sign operation"))
 
 	item := nft.NewNFTSignItem(cmd.contract, cmd.collection, cmd.NFT, cmd.Currency.CID)
-
 	fact := nft.NewNFTSignFact(
 		[]byte(cmd.Token),
 		cmd.sender,
@@ -93,6 +73,7 @@ func (cmd *NFTSignCommand) createOperation() (base.Operation, error) {
 	if err != nil {
 		return nil, e.Wrap(err)
 	}
+
 	err = op.HashSign(cmd.Privatekey, cmd.NetworkID.NetworkID())
 	if err != nil {
 		return nil, e.Wrap(err)

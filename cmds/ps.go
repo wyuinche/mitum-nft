@@ -2,8 +2,10 @@ package cmds
 
 import (
 	"context"
+
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	currencyprocessor "github.com/ProtoconNet/mitum-currency/v3/operation/processor"
+	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/processor"
 	"github.com/ProtoconNet/mitum2/base"
@@ -15,6 +17,11 @@ import (
 )
 
 var PNameOperationProcessorsMap = ps.Name("mitum-nft-operation-processors-map")
+
+type processorInfo struct {
+	hint      hint.Hint
+	processor types.GetNewProcessor
+}
 
 func POperationProcessorsMap(pctx context.Context) (context.Context, error) {
 	var isaacParams *isaac.Params
@@ -39,105 +46,33 @@ func POperationProcessorsMap(pctx context.Context) (context.Context, error) {
 	if err != nil {
 		return pctx, err
 	}
-	if err := opr.SetProcessor(
-		nft.CollectionRegisterHint,
-		nft.NewCollectionRegisterProcessor(),
-	); err != nil {
-		return pctx, err
-	} else if err := opr.SetProcessor(
-		nft.CollectionPolicyUpdaterHint,
-		nft.NewCollectionPolicyUpdaterProcessor(),
-	); err != nil {
-		return pctx, err
-	} else if err := opr.SetProcessor(
-		nft.MintHint,
-		nft.NewMintProcessor(),
-	); err != nil {
-		return pctx, err
-	} else if err := opr.SetProcessor(
-		nft.NFTTransferHint,
-		nft.NewNFTTransferProcessor(),
-	); err != nil {
-		return pctx, err
-	} else if err := opr.SetProcessor(
-		nft.DelegateHint,
-		nft.NewDelegateProcessor(),
-	); err != nil {
-		return pctx, err
-	} else if err := opr.SetProcessor(
-		nft.ApproveHint,
-		nft.NewApproveProcessor(),
-	); err != nil {
-		return pctx, err
-	} else if err := opr.SetProcessor(
-		nft.NFTSignHint,
-		nft.NewNFTSignProcessor(),
-	); err != nil {
-		return pctx, err
+
+	ps := []processorInfo{
+		{nft.CollectionRegisterHint, nft.NewCollectionRegisterProcessor()},
+		{nft.CollectionPolicyUpdaterHint, nft.NewCollectionPolicyUpdaterProcessor()},
+		{nft.MintHint, nft.NewMintProcessor()},
+		{nft.NFTTransferHint, nft.NewNFTTransferProcessor()},
+		{nft.DelegateHint, nft.NewDelegateProcessor()},
+		{nft.ApproveHint, nft.NewApproveProcessor()},
+		{nft.NFTSignHint, nft.NewNFTSignProcessor()},
 	}
 
-	_ = set.Add(nft.CollectionRegisterHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
+	for _, p := range ps {
+		if err := opr.SetProcessor(p.hint, p.processor); err != nil {
+			return pctx, err
+		}
 
-	_ = set.Add(nft.CollectionPolicyUpdaterHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
-
-	_ = set.Add(nft.MintHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
-
-	_ = set.Add(nft.NFTTransferHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
-
-	_ = set.Add(nft.DelegateHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
-
-	_ = set.Add(nft.ApproveHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
-
-	_ = set.Add(nft.NFTSignHint, func(height base.Height) (base.OperationProcessor, error) {
-		return opr.New(
-			height,
-			db.State,
-			nil,
-			nil,
-		)
-	})
+		if err := set.Add(p.hint, func(height base.Height) (base.OperationProcessor, error) {
+			return opr.New(
+				height,
+				db.State,
+				nil,
+				nil,
+			)
+		}); err != nil {
+			return pctx, err
+		}
+	}
 
 	var f currencycmds.ProposalOperationFactHintFunc = IsSupportedProposalOperationFactHintFunc
 

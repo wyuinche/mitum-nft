@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
@@ -17,14 +18,15 @@ func (n *NFT) unmarshal(
 	hs string,
 	uri string,
 	ap string,
-	bcrs []byte,
+	bcs []byte,
 ) error {
-	e := util.StringError("failed to unmarshal NFT")
+	e := util.StringError(utils.ErrStringUnmarshal(*n))
 
 	n.BaseHinter = hint.NewBaseHinter(ht)
 	n.active = ac
 	n.hash = NFTHash(hs)
 	n.uri = URI(uri)
+	n.id = id
 
 	owner, err := base.DecodeAddress(ow, enc)
 	if err != nil {
@@ -37,14 +39,13 @@ func (n *NFT) unmarshal(
 		return e.Wrap(err)
 	}
 	n.approved = approved
-	n.id = id
 
-	if hinter, err := enc.Decode(bcrs); err != nil {
+	if hinter, err := enc.Decode(bcs); err != nil {
 		return e.Wrap(err)
-	} else if sns, ok := hinter.(Signers); !ok {
-		return e.Wrap(errors.Errorf("expected Signers, not %T", hinter))
+	} else if s, ok := hinter.(Signers); !ok {
+		return e.Wrap(errors.Errorf("expected %T, not %T", Signers{}, hinter))
 	} else {
-		n.creators = sns
+		n.creators = s
 	}
 
 	return nil

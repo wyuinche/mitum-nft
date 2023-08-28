@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
@@ -45,7 +46,7 @@ type NFTJSONUnmarshaler struct {
 }
 
 func (n *NFT) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of NFT")
+	e := util.StringError(utils.ErrStringDecodeJSON(*n))
 
 	var u NFTJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {

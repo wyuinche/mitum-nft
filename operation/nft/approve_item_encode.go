@@ -2,7 +2,8 @@ package nft
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -16,24 +17,24 @@ func (it *ApproveItem) unmarshal(
 	idx uint64,
 	cid string,
 ) error {
-	e := util.StringError("failed to unmarshal ApproveItem")
+	e := util.StringError(utils.ErrStringUnmarshal(*it))
 
 	it.BaseHinter = hint.NewBaseHinter(ht)
 	it.currency = types.CurrencyID(cid)
 	it.collection = types.ContractID(col)
-	switch a, err := mitumbase.DecodeAddress(ca, enc); {
-	case err != nil:
-		return e.Wrap(err)
-	default:
-		it.contract = a
-	}
+	it.idx = idx
 
-	approved, err := mitumbase.DecodeAddress(ap, enc)
+	contract, err := base.DecodeAddress(ca, enc)
+	if err != nil {
+		return e.Wrap(err)
+	}
+	it.contract = contract
+
+	approved, err := base.DecodeAddress(ap, enc)
 	if err != nil {
 		return e.Wrap(err)
 	}
 	it.approved = approved
-	it.idx = idx
 
 	return nil
 }

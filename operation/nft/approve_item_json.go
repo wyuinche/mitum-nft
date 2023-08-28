@@ -2,7 +2,8 @@ package nft
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -10,11 +11,11 @@ import (
 
 type ApproveItemJSONMarshaler struct {
 	hint.BaseHinter
-	Contract   mitumbase.Address `json:"contract"`
-	Collection types.ContractID  `json:"collection"`
-	Approved   mitumbase.Address `json:"approved"`
-	NFTidx     uint64            `json:"nftidx"`
-	Currency   types.CurrencyID  `json:"currency"`
+	Contract   base.Address     `json:"contract"`
+	Collection types.ContractID `json:"collection"`
+	Approved   base.Address     `json:"approved"`
+	NFTidx     uint64           `json:"nftidx"`
+	Currency   types.CurrencyID `json:"currency"`
 }
 
 func (it ApproveItem) MarshalJSON() ([]byte, error) {
@@ -38,7 +39,7 @@ type ApproveItemJSONUnmarshaler struct {
 }
 
 func (it *ApproveItem) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed decode json of ApproveItem")
+	e := util.StringError(utils.ErrStringDecodeJSON(*it))
 
 	var u ApproveItemJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {

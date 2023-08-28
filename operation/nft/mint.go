@@ -2,10 +2,12 @@ package nft
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
+	"github.com/pkg/errors"
 )
 
 var MaxMintItems = 10
@@ -16,15 +18,14 @@ var (
 )
 
 type MintFact struct {
-	mitumbase.BaseFact
-	sender mitumbase.Address
+	base.BaseFact
+	sender base.Address
 	items  []MintItem
 }
 
-func NewMintFact(token []byte, sender mitumbase.Address, items []MintItem) MintFact {
-	bf := mitumbase.NewBaseFact(MintFactHint, token)
+func NewMintFact(token []byte, sender base.Address, items []MintItem) MintFact {
 	fact := MintFact{
-		BaseFact: bf,
+		BaseFact: base.NewBaseFact(MintFactHint, token),
 		sender:   sender,
 		items:    items,
 	}
@@ -33,26 +34,32 @@ func NewMintFact(token []byte, sender mitumbase.Address, items []MintItem) MintF
 }
 
 func (fact MintFact) IsValid(b []byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(fact))
+
 	if err := util.CheckIsValiders(nil, false,
 		fact.BaseHinter,
 		fact.sender,
 	); err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	if err := common.IsValidOperationFact(fact, b); err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	if l := len(fact.items); l < 1 {
-		return util.ErrInvalid.Errorf("empty items for MintFact")
-	} else if l > int(MaxMintItems) {
-		return util.ErrInvalid.Errorf("items over allowed, %d > %d", l, MaxMintItems)
+		return e.Wrap(errors.Errorf("empty items, %T", fact))
+	} else if l > int(MaxItems) {
+		return e.Wrap(errors.Errorf("invalid length of items, %d > max(%d)", l, MaxItems))
 	}
 
 	for _, item := range fact.items {
 		if err := item.IsValid(nil); err != nil {
-			return err
+			return e.Wrap(err)
+		}
+
+		if item.contract.Equal(fact.sender) {
+			return e.Wrap(errors.Errorf("contract address is same with sender, %s", fact.sender))
 		}
 	}
 
@@ -68,41 +75,24 @@ func (fact MintFact) GenerateHash() util.Hash {
 }
 
 func (fact MintFact) Bytes() []byte {
-	is := make([][]byte, len(fact.items))
-
-	for i := range fact.items {
-		is[i] = fact.items[i].Bytes()
+	bs := make([][]byte, len(fact.items))
+	for i, item := range fact.items {
+		bs[i] = item.Bytes()
 	}
 
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
-		util.ConcatBytesSlice(is...),
+		util.ConcatBytesSlice(bs...),
 	)
 }
 
-func (fact MintFact) Token() mitumbase.Token {
+func (fact MintFact) Token() base.Token {
 	return fact.BaseFact.Token()
 }
 
-func (fact MintFact) Sender() mitumbase.Address {
+func (fact MintFact) Sender() base.Address {
 	return fact.sender
-}
-
-func (fact MintFact) Addresses() ([]mitumbase.Address, error) {
-	as := []mitumbase.Address{}
-
-	for _, item := range fact.items {
-		if ads, err := item.Addresses(); err != nil {
-			return nil, err
-		} else {
-			as = append(as, ads...)
-		}
-	}
-
-	as = append(as, fact.sender)
-
-	return as, nil
 }
 
 func (fact MintFact) Items() []MintItem {
@@ -117,7 +107,7 @@ func NewMint(fact MintFact) (Mint, error) {
 	return Mint{BaseOperation: common.NewBaseOperation(MintHint, fact)}, nil
 }
 
-func (op *Mint) HashSign(priv mitumbase.Privatekey, networkID mitumbase.NetworkID) error {
+func (op *Mint) HashSign(priv base.Privatekey, networkID base.NetworkID) error {
 	err := op.Sign(priv, networkID)
 	if err != nil {
 		return err

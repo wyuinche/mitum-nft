@@ -4,20 +4,21 @@ import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 )
 
 type CollectionPolicyUpdaterFactJSONMarshaler struct {
-	mitumbase.BaseFactJSONMarshaler
-	Sender     mitumbase.Address        `json:"sender"`
-	Contract   mitumbase.Address        `json:"contract"`
+	base.BaseFactJSONMarshaler
+	Sender     base.Address             `json:"sender"`
+	Contract   base.Address             `json:"contract"`
 	Collection currencytypes.ContractID `json:"collection"`
 	Name       types.CollectionName     `json:"name"`
 	Royalty    types.PaymentParameter   `json:"royalty"`
 	URI        types.URI                `json:"uri"`
-	Whitelist  []mitumbase.Address      `json:"whitelist"`
+	Whitelist  []base.Address           `json:"whitelist"`
 	Currency   currencytypes.CurrencyID `json:"currency"`
 }
 
@@ -36,7 +37,7 @@ func (fact CollectionPolicyUpdaterFact) MarshalJSON() ([]byte, error) {
 }
 
 type CollectionPolicyUpdaterFactJSONUnmarshaler struct {
-	mitumbase.BaseFactJSONUnmarshaler
+	base.BaseFactJSONUnmarshaler
 	Sender     string   `json:"sender"`
 	Contract   string   `json:"contract"`
 	Collection string   `json:"collection"`
@@ -48,7 +49,7 @@ type CollectionPolicyUpdaterFactJSONUnmarshaler struct {
 }
 
 func (fact *CollectionPolicyUpdaterFact) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of CollectionPolicyUpdaterFact")
+	e := util.StringError(utils.ErrStringDecodeJSON(*fact))
 
 	var u CollectionPolicyUpdaterFactJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
@@ -60,18 +61,18 @@ func (fact *CollectionPolicyUpdaterFact) DecodeJSON(b []byte, enc *jsonenc.Encod
 	return fact.unmarshal(enc, u.Sender, u.Contract, u.Collection, u.Name, u.Royalty, u.URI, u.Whitelist, u.Currency)
 }
 
-type collectionPolicyUpdaterMarshaler struct {
+type collectionCollectionPolicyUpdaterMarshaler struct {
 	common.BaseOperationJSONMarshaler
 }
 
 func (op CollectionPolicyUpdater) MarshalJSON() ([]byte, error) {
-	return util.MarshalJSON(collectionPolicyUpdaterMarshaler{
+	return util.MarshalJSON(collectionCollectionPolicyUpdaterMarshaler{
 		BaseOperationJSONMarshaler: op.BaseOperation.JSONMarshaler(),
 	})
 }
 
 func (op *CollectionPolicyUpdater) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of CollectionPolicyUpdater")
+	e := util.StringError(utils.ErrStringDecodeJSON(*op))
 
 	var ubo common.BaseOperation
 	if err := ubo.DecodeJSON(b, enc); err != nil {

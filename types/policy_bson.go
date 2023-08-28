@@ -4,11 +4,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 
-func (p CollectionPolicy) MarshalBSON() ([]byte, error) {
+func (p Policy) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(bson.M{
 		"_hint":     p.Hint().String(),
 		"name":      p.name,
@@ -26,8 +27,8 @@ type PolicyBSONUnmarshaler struct {
 	Whites  []string `bson:"whitelist"`
 }
 
-func (p *CollectionPolicy) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("failed to decode bson of CollectionPolicy")
+func (p *Policy) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
+	e := util.StringError(utils.ErrStringDecodeBSON(*p))
 
 	var u PolicyBSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {

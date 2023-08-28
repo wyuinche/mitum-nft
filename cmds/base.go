@@ -2,11 +2,14 @@ package cmds
 
 import (
 	"context"
-	"fmt"
-	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"io"
 	"os"
 
+	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
+	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/pkg/errors"
+
+	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
@@ -57,13 +60,8 @@ func (cmd *BaseCommand) prepare(pctx context.Context) (context.Context, error) {
 	)
 }
 
-func (cmd *BaseCommand) print(f string, a ...interface{}) {
-	_, _ = fmt.Fprintf(cmd.Out, f, a...)
-	_, _ = fmt.Fprintln(cmd.Out)
-}
-
 func PAddHinters(ctx context.Context) (context.Context, error) {
-	e := util.StringError("add hinters")
+	e := util.StringError("failed to add hinters")
 
 	var enc encoder.Encoder
 	if err := util.LoadFromContextOK(ctx, launch.EncoderContextKey, &enc); err != nil {
@@ -83,4 +81,50 @@ func PAddHinters(ctx context.Context) (context.Context, error) {
 	}
 
 	return ctx, nil
+}
+
+type OperationCommand struct {
+	BaseCommand
+	currencycmds.OperationFlags
+	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address to register token" required:"true"`
+	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
+	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	sender     base.Address
+	contract   base.Address
+	collection types.ContractID
+}
+
+func NewOperationCommand() *OperationCommand {
+	cmd := NewBaseCommand()
+	return &OperationCommand{
+		BaseCommand: *cmd,
+	}
+}
+
+func (cmd *OperationCommand) parseFlags() error {
+	if err := cmd.OperationFlags.IsValid(nil); err != nil {
+		return err
+	}
+
+	sender, err := cmd.Sender.Encode(enc)
+	if err != nil {
+		return errors.Wrapf(err, "invalid sender format, %q", cmd.Sender.String())
+	}
+	cmd.sender = sender
+
+	contract, err := cmd.Contract.Encode(enc)
+	if err != nil {
+		return errors.Wrapf(err, "invalid contract account format, %q", cmd.Contract.String())
+	}
+	cmd.contract = contract
+
+	collection := types.ContractID(cmd.Collection)
+	if err := collection.IsValid(nil); err != nil {
+		return err
+	} else {
+		cmd.collection = collection
+	}
+
+	return nil
 }

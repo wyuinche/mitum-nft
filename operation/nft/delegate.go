@@ -2,10 +2,12 @@ package nft
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -16,15 +18,14 @@ var (
 var MaxDelegateItems = 10
 
 type DelegateFact struct {
-	mitumbase.BaseFact
-	sender mitumbase.Address
+	base.BaseFact
+	sender base.Address
 	items  []DelegateItem
 }
 
-func NewDelegateFact(token []byte, sender mitumbase.Address, items []DelegateItem) DelegateFact {
-	bf := mitumbase.NewBaseFact(DelegateFactHint, token)
+func NewDelegateFact(token []byte, sender base.Address, items []DelegateItem) DelegateFact {
 	fact := DelegateFact{
-		BaseFact: bf,
+		BaseFact: base.NewBaseFact(DelegateFactHint, token),
 		sender:   sender,
 		items:    items,
 	}
@@ -34,40 +35,42 @@ func NewDelegateFact(token []byte, sender mitumbase.Address, items []DelegateIte
 }
 
 func (fact DelegateFact) IsValid(b []byte) error {
-	if err := fact.BaseHinter.IsValid(nil); err != nil {
-		return err
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(fact))
+
+	if err := util.CheckIsValiders(nil, false,
+		fact.BaseHinter,
+		fact.sender,
+	); err != nil {
+		return e.Wrap(err)
 	}
 
 	if err := common.IsValidOperationFact(fact, b); err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	if l := len(fact.items); l < 1 {
-		return util.ErrInvalid.Errorf("empty items for DelegateFact")
-	} else if l > int(MaxDelegateItems) {
-		return util.ErrInvalid.Errorf("items over allowed, %d > %d", l, MaxDelegateItems)
+		return e.Wrap(errors.Errorf("empty items, %T", fact))
+	} else if l > int(MaxItems) {
+		return e.Wrap(errors.Errorf("invalid length of items, %d > max(%d)", l, MaxItems))
 	}
 
-	if err := fact.sender.IsValid(nil); err != nil {
-		return err
-	}
-
-	founds := map[string]map[string]struct{}{}
+	founds := map[string]struct{}{}
 	for _, item := range fact.items {
 		if err := item.IsValid(nil); err != nil {
-			return err
+			return e.Wrap(err)
 		}
 
-		operator := item.Operator()
-		collection := item.Collection()
-
-		if addressMap, collectionFound := founds[collection.String()]; !collectionFound {
-			founds[collection.String()] = make(map[string]struct{})
-		} else if _, addressFound := addressMap[operator.String()]; addressFound {
-			return util.ErrInvalid.Errorf("duplicate collection-operator found, %q-%q", collection, operator)
+		if item.contract.Equal(fact.sender) {
+			return e.Wrap(errors.Errorf("contract address is same with sender, %s", fact.sender))
 		}
 
-		founds[collection.String()][operator.String()] = struct{}{}
+		k := item.Operator().String() + ":" + item.Collection().String()
+
+		if _, found := founds[k]; found {
+			return e.Wrap(errors.Errorf(utils.ErrStringDuplicate("collection-operator", k)))
+		}
+
+		founds[k] = struct{}{}
 	}
 
 	return nil
@@ -82,38 +85,24 @@ func (fact DelegateFact) GenerateHash() util.Hash {
 }
 
 func (fact DelegateFact) Bytes() []byte {
-	is := make([][]byte, len(fact.items))
+	bs := make([][]byte, len(fact.items))
 	for i, item := range fact.items {
-		is[i] = item.Bytes()
+		bs[i] = item.Bytes()
 	}
 
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
-		util.ConcatBytesSlice(is...),
+		util.ConcatBytesSlice(bs...),
 	)
 }
 
-func (fact DelegateFact) Token() mitumbase.Token {
+func (fact DelegateFact) Token() base.Token {
 	return fact.BaseFact.Token()
 }
 
-func (fact DelegateFact) Sender() mitumbase.Address {
+func (fact DelegateFact) Sender() base.Address {
 	return fact.sender
-}
-
-func (fact DelegateFact) Addresses() ([]mitumbase.Address, error) {
-	l := len(fact.items)
-
-	as := make([]mitumbase.Address, l+1)
-
-	for i, item := range fact.items {
-		as[i] = item.Operator()
-	}
-
-	as[l] = fact.sender
-
-	return as, nil
 }
 
 func (fact DelegateFact) Items() []DelegateItem {
@@ -128,7 +117,7 @@ func NewDelegate(fact DelegateFact) (Delegate, error) {
 	return Delegate{BaseOperation: common.NewBaseOperation(DelegateHint, fact)}, nil
 }
 
-func (op *Delegate) HashSign(priv mitumbase.Privatekey, networkID mitumbase.NetworkID) error {
+func (op *Delegate) HashSign(priv base.Privatekey, networkID base.NetworkID) error {
 	err := op.Sign(priv, networkID)
 	if err != nil {
 		return err

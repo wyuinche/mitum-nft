@@ -2,33 +2,26 @@ package cmds
 
 import (
 	"context"
+
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
 )
 
 type DelegateCommand struct {
-	BaseCommand
-	currencycmds.OperationFlags
-	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
-	Operator   currencycmds.AddressFlag    `arg:"" name:"operator" help:"operator account address"`
-	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	Mode       string                      `name:"mode" help:"delegate mode" optional:""`
-	sender     base.Address
-	contract   base.Address
-	collection types.ContractID
-	operator   base.Address
-	mode       nft.DelegateMode
+	OperationCommand
+	Operator currencycmds.AddressFlag `arg:"" name:"operator" help:"operator account address"`
+	Mode     string                   `name:"mode" help:"delegate mode" optional:""`
+	operator base.Address
+	mode     nft.DelegateMode
 }
 
 func NewDelegateCommand() DelegateCommand {
-	cmd := NewBaseCommand()
-	return DelegateCommand{BaseCommand: *cmd}
+	cmd := NewOperationCommand()
+	return DelegateCommand{OperationCommand: *cmd}
 }
 
 func (cmd *DelegateCommand) Run(pctx context.Context) error {
@@ -54,33 +47,15 @@ func (cmd *DelegateCommand) Run(pctx context.Context) error {
 }
 
 func (cmd *DelegateCommand) parseFlags() error {
-	if err := cmd.OperationFlags.IsValid(nil); err != nil {
+	if err := cmd.OperationCommand.parseFlags(); err != nil {
 		return err
 	}
 
-	if a, err := cmd.Sender.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid sender address format; %q", cmd.Sender)
-	} else {
-		cmd.sender = a
+	operator, err := cmd.Operator.Encode(enc)
+	if err != nil {
+		return errors.Wrapf(err, "invalid operator format, %q", cmd.Operator.String())
 	}
-
-	if a, err := cmd.Contract.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid contract address format; %q", cmd.Contract)
-	} else {
-		cmd.contract = a
-	}
-
-	collection := types.ContractID(cmd.Collection)
-	if err := collection.IsValid(nil); err != nil {
-		return err
-	}
-	cmd.collection = collection
-
-	if a, err := cmd.Operator.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid operator address format; %q", cmd.Operator)
-	} else {
-		cmd.operator = a
-	}
+	cmd.operator = operator
 
 	if len(cmd.Mode) < 1 {
 		cmd.mode = nft.DelegateAllow
@@ -97,7 +72,7 @@ func (cmd *DelegateCommand) parseFlags() error {
 }
 
 func (cmd *DelegateCommand) createOperation() (base.Operation, error) {
-	e := util.StringError("failed to create delegate operation")
+	e := util.StringError(utils.ErrStringCreate("delegate operation"))
 
 	items := []nft.DelegateItem{nft.NewDelegateItem(cmd.contract, cmd.collection, cmd.operator, cmd.mode, cmd.Currency.CID)}
 

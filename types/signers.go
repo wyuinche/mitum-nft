@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"sort"
 
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
+	mitumutil "github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
 )
@@ -31,112 +32,115 @@ func NewSigners(total uint, signers []Signer) Signers {
 	}
 }
 
-func (sgns Signers) IsValid([]byte) error {
-	if err := sgns.BaseHinter.IsValid(nil); err != nil {
-		return err
+func (s Signers) IsValid([]byte) error {
+	e := mitumutil.ErrInvalid.Errorf(utils.ErrStringInvalid(s))
+
+	if err := s.BaseHinter.IsValid(nil); err != nil {
+		return e.Wrap(err)
 	}
 
-	if sgns.total > MaxTotalShare {
-		return util.ErrInvalid.Errorf("total share over max, %d > %d", sgns.total, MaxTotalShare)
+	if s.total > MaxTotalShare {
+		return e.Wrap(errors.Errorf("invalid total share, %d > max(%d)", s.total, MaxTotalShare))
 	}
 
-	if l := len(sgns.signers); l > MaxSigners {
-		return util.ErrInvalid.Errorf("signers over allowed, %d > %d", l, MaxSigners)
+	if l := len(s.signers); l > MaxSigners {
+		return e.Wrap(errors.Errorf("invalid length of signers, %d > max(%d)", l, MaxSigners))
 	}
 
 	var total uint = 0
+
 	founds := map[string]struct{}{}
-	for _, signer := range sgns.signers {
-		if err := signer.IsValid(nil); err != nil {
-			return err
+	for _, sn := range s.signers {
+		if err := sn.IsValid(nil); err != nil {
+			return e.Wrap(err)
 		}
 
-		acc := signer.Account()
-		if _, found := founds[acc.String()]; found {
-			return util.ErrInvalid.Errorf("duplicate signer found, %q", acc)
+		ac := sn.Account().String()
+		if _, found := founds[ac]; found {
+			return e.Wrap(errors.Errorf(utils.ErrStringDuplicate("signer", ac)))
 		}
-		founds[acc.String()] = struct{}{}
+		founds[ac] = struct{}{}
 
-		total += signer.Share()
+		total += sn.Share()
 	}
 
-	if total != sgns.total {
-		return util.ErrInvalid.Errorf("total share must be equal to the sum of all shares, %d != %d", sgns.total, total)
+	if total != s.total {
+		return e.Wrap(errors.Errorf("total share must be equal to the sum of all shares, %d != %d", s.total, total))
 	}
 
 	return nil
 }
 
-func (sgns Signers) Bytes() []byte {
-	bs := make([][]byte, len(sgns.signers))
+func (s Signers) Bytes() []byte {
+	bs := make([][]byte, len(s.signers))
 
-	for i, signer := range sgns.signers {
+	for i, signer := range s.signers {
 		bs[i] = signer.Bytes()
 	}
 
-	return util.ConcatBytesSlice(
-		util.UintToBytes(sgns.total),
-		util.ConcatBytesSlice(bs...),
+	return mitumutil.ConcatBytesSlice(
+		mitumutil.UintToBytes(s.total),
+		mitumutil.ConcatBytesSlice(bs...),
 	)
 }
 
-func (sgns Signers) Total() uint {
-	return sgns.total
+func (s Signers) Total() uint {
+	return s.total
 }
 
-func (sgns Signers) Signers() []Signer {
-	return sgns.signers
+func (s Signers) Signers() []Signer {
+	return s.signers
 }
 
-func (sgns Signers) Addresses() []base.Address {
-	as := make([]base.Address, len(sgns.signers))
-	for i, signer := range sgns.signers {
+func (s Signers) Addresses() []base.Address {
+	as := make([]base.Address, len(s.signers))
+	for i, signer := range s.signers {
 		as[i] = signer.Account()
 	}
 	return as
 }
 
-func (sgns Signers) Index(signer Signer) int {
-	return sgns.IndexByAddress(signer.Account())
+func (s Signers) Index(signer Signer) int {
+	return s.IndexByAddress(signer.Account())
 }
 
-func (sgns Signers) IndexByAddress(address base.Address) int {
-	for i := range sgns.signers {
-		if address.Equal(sgns.signers[i].Account()) {
+func (s Signers) IndexByAddress(address base.Address) int {
+	for i := range s.signers {
+		if address.Equal(s.signers[i].Account()) {
 			return i
 		}
 	}
 	return -1
 }
 
-func (sgns Signers) Exists(signer Signer) bool {
-	if idx := sgns.Index(signer); idx >= 0 {
+func (s Signers) Exists(signer Signer) bool {
+	if idx := s.Index(signer); idx >= 0 {
 		return true
 	}
 	return false
 }
 
-func (xs Signers) Equal(ys Signers) bool {
-	if xs.Total() != ys.Total() {
+func (s Signers) Equal(c Signers) bool {
+	if s.Total() != c.Total() {
 		return false
 	}
 
-	if len(xs.Signers()) != len(ys.Signers()) {
+	if len(s.Signers()) != len(c.Signers()) {
 		return false
 	}
 
-	xsg := xs.Signers()
-	sort.Slice(xsg, func(i, j int) bool {
-		return bytes.Compare(xsg[j].Bytes(), xsg[i].Bytes()) < 0
+	ss := s.Signers()
+	sort.Slice(ss, func(i, j int) bool {
+		return bytes.Compare(ss[j].Bytes(), ss[i].Bytes()) < 0
 	})
 
-	ysg := ys.Signers()
-	sort.Slice(ysg, func(i, j int) bool {
-		return bytes.Compare(ysg[j].Bytes(), ysg[i].Bytes()) < 0
+	cs := c.Signers()
+	sort.Slice(cs, func(i, j int) bool {
+		return bytes.Compare(cs[j].Bytes(), cs[i].Bytes()) < 0
 	})
 
-	for i := range xsg {
-		if !xsg[i].Equal(ysg[i]) {
+	for i := range ss {
+		if !ss[i].Equal(cs[i]) {
 			return false
 		}
 	}
@@ -144,23 +148,23 @@ func (xs Signers) Equal(ys Signers) bool {
 	return true
 }
 
-func (sgns Signers) IsSigned(sgn Signer) bool {
-	return sgns.IsSignedByAddress(sgn.Account())
+func (s Signers) IsSigned(signer Signer) bool {
+	return s.IsSignedByAddress(signer.Account())
 }
 
-func (sgns Signers) IsSignedByAddress(address base.Address) bool {
-	idx := sgns.IndexByAddress(address)
+func (s Signers) IsSignedByAddress(address base.Address) bool {
+	idx := s.IndexByAddress(address)
 	if idx < 0 {
 		return false
 	}
-	return sgns.signers[idx].Signed()
+	return s.signers[idx].Signed()
 }
 
-func (sgns *Signers) SetSigner(sgn Signer) error {
-	idx := sgns.Index(sgn)
+func (s *Signers) SetSigner(signer Signer) error {
+	idx := s.Index(signer)
 	if idx < 0 {
-		return errors.Errorf("signer not in signers, %q", sgn.Account())
+		return errors.Errorf("signer not in signers, %q", signer.Account())
 	}
-	sgns.signers[idx] = sgn
+	s.signers[idx] = signer
 	return nil
 }

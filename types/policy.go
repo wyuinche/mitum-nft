@@ -5,10 +5,11 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/pkg/errors"
 )
 
 var MaxWhitelist = 10
@@ -21,47 +22,45 @@ var (
 
 type CollectionName string
 
-func (cn CollectionName) IsValid([]byte) error {
-	l := len(cn)
+func (n CollectionName) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(n))
 
+	l := len(n)
 	if l < MinLengthCollectionName {
-		return util.ErrInvalid.Errorf(
-			"collection name length under min, %d < %d", l, MinLengthCollectionName)
+		return e.Wrap(errors.Errorf("invalid length of collection name, %d < min(%d)", l, MinLengthCollectionName))
 	}
-
 	if l > MaxLengthCollectionName {
-		return util.ErrInvalid.Errorf(
-			"collection name length over max, %d > %d", l, MaxLengthCollectionName)
+		return e.Wrap(errors.Errorf("invalid length of collection name, %d > max(%d)", l, MaxLengthCollectionName))
 	}
 
-	if !ReValidCollectionName.Match([]byte(cn)) {
-		return util.ErrInvalid.Errorf("wrong collection name, %q", cn)
+	if !ReValidCollectionName.Match([]byte(n)) {
+		return e.Wrap(errors.New(utils.ErrStringFormat("collection name", n.String())))
 	}
 
 	return nil
 }
 
-func (cn CollectionName) Bytes() []byte {
-	return []byte(cn)
+func (n CollectionName) Bytes() []byte {
+	return []byte(n)
 }
 
-func (cn CollectionName) String() string {
-	return string(cn)
+func (n CollectionName) String() string {
+	return string(n)
 }
 
-var CollectionPolicyHint = hint.MustNewHint("mitum-nft-collection-policy-v0.0.1")
+var PolicyHint = hint.MustNewHint("mitum-nft-collection-policy-v0.0.1")
 
-type CollectionPolicy struct {
+type Policy struct {
 	hint.BaseHinter
 	name      CollectionName
 	royalty   PaymentParameter
 	uri       URI
-	whitelist []mitumbase.Address
+	whitelist []base.Address
 }
 
-func NewCollectionPolicy(name CollectionName, royalty PaymentParameter, uri URI, whitelist []mitumbase.Address) CollectionPolicy {
-	return CollectionPolicy{
-		BaseHinter: hint.NewBaseHinter(CollectionPolicyHint),
+func NewPolicy(name CollectionName, royalty PaymentParameter, uri URI, whitelist []base.Address) Policy {
+	return Policy{
+		BaseHinter: hint.NewBaseHinter(PolicyHint),
 		name:       name,
 		royalty:    royalty,
 		uri:        uri,
@@ -69,117 +68,96 @@ func NewCollectionPolicy(name CollectionName, royalty PaymentParameter, uri URI,
 	}
 }
 
-func (policy CollectionPolicy) IsValid([]byte) error {
+func (p Policy) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(p))
+
 	if err := util.CheckIsValiders(nil, false,
-		policy.name,
-		policy.royalty,
-		policy.uri,
+		p.name,
+		p.royalty,
+		p.uri,
 	); err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
-	if l := len(policy.whitelist); l > MaxWhitelist {
-		return util.ErrInvalid.Errorf("whitelist over allowed, %d > %d", l, MaxWhitelist)
+	if l := len(p.whitelist); l > MaxWhitelist {
+		return e.Wrap(errors.Errorf("invalid length of whitelist, %d > max(%d)", l, MaxWhitelist))
 	}
 
 	founds := map[string]struct{}{}
-	for _, white := range policy.whitelist {
-		if err := white.IsValid(nil); err != nil {
-			return err
+	for _, a := range p.whitelist {
+		if err := a.IsValid(nil); err != nil {
+			return e.Wrap(err)
 		}
-		if _, found := founds[white.String()]; found {
-			return util.ErrInvalid.Errorf("duplicate white found, %q", white)
+		if _, found := founds[a.String()]; found {
+			return e.Wrap(errors.New(utils.ErrStringDuplicate("whitelist account", a.String())))
 		}
-		founds[white.String()] = struct{}{}
+		founds[a.String()] = struct{}{}
 	}
 
 	return nil
 }
 
-func (policy CollectionPolicy) Bytes() []byte {
-	as := make([][]byte, len(policy.whitelist))
-	for i, white := range policy.whitelist {
-		as[i] = white.Bytes()
+func (p Policy) Bytes() []byte {
+	bs := make([][]byte, len(p.whitelist))
+	for i, white := range p.whitelist {
+		bs[i] = white.Bytes()
 	}
 
 	return util.ConcatBytesSlice(
-		policy.name.Bytes(),
-		policy.royalty.Bytes(),
-		policy.uri.Bytes(),
-		util.ConcatBytesSlice(as...),
+		p.name.Bytes(),
+		p.royalty.Bytes(),
+		p.uri.Bytes(),
+		util.ConcatBytesSlice(bs...),
 	)
 }
 
-func (policy CollectionPolicy) Name() CollectionName {
-	return policy.name
+func (p Policy) Name() CollectionName {
+	return p.name
 }
 
-func (policy CollectionPolicy) Royalty() PaymentParameter {
-	return policy.royalty
+func (p Policy) Royalty() PaymentParameter {
+	return p.royalty
 }
 
-func (policy CollectionPolicy) URI() URI {
-	return policy.uri
+func (p Policy) URI() URI {
+	return p.uri
 }
 
-func (policy CollectionPolicy) Whitelist() []mitumbase.Address {
-	return policy.whitelist
+func (p Policy) Whitelist() []base.Address {
+	return p.whitelist
 }
 
-func (policy CollectionPolicy) Addresses() ([]mitumbase.Address, error) {
-	return policy.whitelist, nil
-}
-
-func (policy CollectionPolicy) Equal(c BasePolicy) bool {
-	cpolicy, ok := c.(CollectionPolicy)
-	if !ok {
+func (p Policy) Equal(c Policy) bool {
+	if p.name != c.name {
 		return false
 	}
 
-	if policy.name != cpolicy.name {
+	if p.royalty != c.royalty {
 		return false
 	}
 
-	if policy.royalty != cpolicy.royalty {
+	if p.uri != c.uri {
 		return false
 	}
 
-	if policy.uri != cpolicy.uri {
+	if len(p.whitelist) != len(c.whitelist) {
 		return false
 	}
 
-	if len(policy.whitelist) != len(cpolicy.whitelist) {
-		return false
-	}
-
-	whitelist := policy.Whitelist()
-	cwhitelist := cpolicy.Whitelist()
-	sort.Slice(whitelist, func(i, j int) bool {
-		return bytes.Compare(whitelist[j].Bytes(), whitelist[i].Bytes()) < 0
+	wl := p.Whitelist()
+	cwl := c.Whitelist()
+	sort.Slice(wl, func(i, j int) bool {
+		return bytes.Compare(wl[j].Bytes(), wl[i].Bytes()) < 0
 	})
-	sort.Slice(cwhitelist, func(i, j int) bool {
-		return bytes.Compare(cwhitelist[j].Bytes(), cwhitelist[i].Bytes()) < 0
+	sort.Slice(cwl, func(i, j int) bool {
+		return bytes.Compare(wl[j].Bytes(), wl[i].Bytes()) < 0
 	})
 
-	for i := range whitelist {
-		if !whitelist[i].Equal(cwhitelist[i]) {
+	for i := range wl {
+		if !wl[i].Equal(cwl[i]) {
 			return false
 		}
 	}
 
 	return true
-}
-
-var CollectionDesignHint = hint.MustNewHint("mitum-nft-collection-design-v0.0.1")
-
-type CollectionDesign struct {
-	Design
-}
-
-func NewCollectionDesign(parent mitumbase.Address, creator mitumbase.Address, collection types.ContractID, active bool, policy CollectionPolicy) CollectionDesign {
-	design := NewDesign(parent, creator, collection, active, policy)
-
-	return CollectionDesign{
-		Design: design,
-	}
 }

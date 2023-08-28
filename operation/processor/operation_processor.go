@@ -6,7 +6,7 @@ import (
 	currencyprocessor "github.com/ProtoconNet/mitum-currency/v3/operation/processor"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/pkg/errors"
 )
 
@@ -15,13 +15,13 @@ const (
 	DuplicationTypeCurrency currencytypes.DuplicationType = "currency"
 )
 
-func CheckDuplication(opr *currencyprocessor.OperationProcessor, op mitumbase.Operation) error {
+func CheckDuplication(opr *currencyprocessor.OperationProcessor, op base.Operation) error {
 	opr.Lock()
 	defer opr.Unlock()
 
 	var did string
 	var didtype currencytypes.DuplicationType
-	var newAddresses []mitumbase.Address
+	var newAddresses []base.Address
 
 	switch t := op.(type) {
 	case currency.CreateAccounts:
@@ -159,7 +159,7 @@ func CheckDuplication(opr *currencyprocessor.OperationProcessor, op mitumbase.Op
 	return nil
 }
 
-func GetNewProcessor(opr *currencyprocessor.OperationProcessor, op mitumbase.Operation) (mitumbase.OperationProcessor, bool, error) {
+func GetNewProcessor(opr *currencyprocessor.OperationProcessor, op base.Operation) (base.OperationProcessor, bool, error) {
 	switch i, err := opr.GetNewProcessorFromHintset(op); {
 	case err != nil:
 		return nil, false, err

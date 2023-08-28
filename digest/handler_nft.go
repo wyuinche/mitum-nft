@@ -1,11 +1,12 @@
 package digest
 
 import (
-	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
-	"github.com/ProtoconNet/mitum-nft/v2/types"
 	"net/http"
 	"strconv"
 	"time"
+
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
+	"github.com/ProtoconNet/mitum-nft/v2/types"
 
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/pkg/errors"
@@ -150,18 +151,6 @@ func (hd *Handlers) handleNFTs(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	// if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
-	// 	return hd.handleCollectionNFTsInGroup(contract, collection)
-	// }); err != nil {
-	// 	HTTP2HandleError(w, err)
-	// } else {
-	// 	HTTP2WriteHalBytes(hd.enc, w, v.([]byte), http.StatusOK)
-
-	// 	if !shared {
-	// 		HTTP2WriteCache(w, cachekey, time.Second*3)
-	// 	}
-	// }
 
 	v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
 		i, filled, err := hd.handleNFTsInGroup(contract, collection, offset, reverse, limit)

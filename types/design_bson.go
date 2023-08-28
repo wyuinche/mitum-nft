@@ -4,19 +4,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 
-func (de Design) MarshalBSON() ([]byte, error) {
+func (d Design) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint":      de.Hint().String(),
-			"parent":     de.parent,
-			"creator":    de.creator,
-			"collection": de.collection,
-			"active":     de.active,
-			"policy":     de.policy,
+			"_hint":      d.Hint().String(),
+			"parent":     d.parent,
+			"creator":    d.creator,
+			"collection": d.collection,
+			"active":     d.active,
+			"policy":     d.policy,
 		})
 }
 
@@ -29,11 +30,11 @@ type DesignBSONUnmarshaler struct {
 	Policy     bson.Raw `bson:"policy"`
 }
 
-func (de *Design) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("failed to decode bson of Design")
+func (d *Design) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
+	e := util.StringError(utils.ErrStringDecodeBSON(*d))
 
 	var u DesignBSONUnmarshaler
-	if err := bson.Unmarshal(b, &u); err != nil {
+	if err := enc.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}
 
@@ -42,5 +43,5 @@ func (de *Design) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 		return e.Wrap(err)
 	}
 
-	return de.unmarshal(enc, ht, u.Parent, u.Creator, u.Collection, u.Active, u.Policy)
+	return d.unmarshal(enc, ht, u.Parent, u.Creator, u.Collection, u.Active, u.Policy)
 }

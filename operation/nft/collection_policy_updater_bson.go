@@ -3,6 +3,7 @@ package nft
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
@@ -39,7 +40,7 @@ type CollectionPolicyUpdaterFactBSONUnmarshaler struct {
 }
 
 func (fact *CollectionPolicyUpdaterFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("failed to decode bson of CollectionPolicyUpdaterFact")
+	e := util.StringError(utils.ErrStringDecodeBSON(*fact))
 
 	var u common.BaseFactBSONUnmarshaler
 
@@ -76,7 +77,7 @@ func (op CollectionPolicyUpdater) MarshalBSON() ([]byte, error) {
 }
 
 func (op *CollectionPolicyUpdater) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("failed to decode bson of CollectionPolicyUpdater")
+	e := util.StringError(utils.ErrStringDecodeJSON(*op))
 
 	var ubo common.BaseOperation
 	if err := ubo.DecodeBSON(b, enc); err != nil {

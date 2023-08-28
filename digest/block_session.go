@@ -3,9 +3,10 @@ package digest
 import (
 	"context"
 	"fmt"
-	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 	"sync"
 	"time"
+
+	currencydigest "github.com/ProtoconNet/mitum-currency/v3/digest"
 
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +15,7 @@ import (
 	"github.com/ProtoconNet/mitum-currency/v3/digest/isaac"
 	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	base "github.com/ProtoconNet/mitum2/base"
 	mitumutil "github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/fixedtree"
 )
@@ -23,12 +24,12 @@ var bulkWriteLimit = 500
 
 type BlockSession struct {
 	sync.RWMutex
-	block                 mitumbase.BlockMap
-	ops                   []mitumbase.Operation
+	block                 base.BlockMap
+	ops                   []base.Operation
 	opstree               fixedtree.Tree
-	sts                   []mitumbase.State
+	sts                   []base.State
 	st                    *currencydigest.Database
-	opsTreeNodes          map[string]mitumbase.OperationFixedtreeNode
+	opsTreeNodes          map[string]base.OperationFixedtreeNode
 	blockModels           []mongo.WriteModel
 	operationModels       []mongo.WriteModel
 	accountModels         []mongo.WriteModel
@@ -46,10 +47,10 @@ type BlockSession struct {
 
 func NewBlockSession(
 	st *currencydigest.Database,
-	blk mitumbase.BlockMap,
-	ops []mitumbase.Operation,
+	blk base.BlockMap,
+	ops []base.Operation,
 	opstree fixedtree.Tree,
-	sts []mitumbase.State,
+	sts []base.State,
 ) (*BlockSession, error) {
 	if st.Readonly() {
 		return nil, errors.Errorf("readonly mode")
@@ -100,7 +101,6 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 	started := time.Now()
 	defer func() {
 		bs.statesValue.Store("commit", time.Since(started))
-
 		_ = bs.close()
 	}()
 
@@ -177,15 +177,14 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 func (bs *BlockSession) Close() error {
 	bs.Lock()
 	defer bs.Unlock()
-
 	return bs.close()
 }
 
 func (bs *BlockSession) prepareOperationsTree() error {
-	nodes := map[string]mitumbase.OperationFixedtreeNode{}
+	nodes := map[string]base.OperationFixedtreeNode{}
 
 	if err := bs.opstree.Traverse(func(_ uint64, no fixedtree.Node) (bool, error) {
-		nno := no.(mitumbase.OperationFixedtreeNode)
+		nno := no.(base.OperationFixedtreeNode)
 		nodes[nno.Key()] = nno
 
 		return true, nil
@@ -229,7 +228,7 @@ func (bs *BlockSession) prepareOperations() error {
 		return nil
 	}
 
-	node := func(h mitumutil.Hash) (bool, bool, mitumbase.OperationProcessReasonError) {
+	node := func(h mitumutil.Hash) (bool, bool, base.OperationProcessReasonError) {
 		no, found := bs.opsTreeNodes[h.String()]
 		if !found {
 			return false, false, nil
@@ -380,6 +379,7 @@ func (bs *BlockSession) close() error {
 	bs.nftCollectionModels = nil
 	bs.nftModels = nil
 	bs.nftOperatorModels = nil
+	bs.nftBoxModels = nil
 
 	return bs.st.Close()
 }

@@ -4,6 +4,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
@@ -33,7 +34,7 @@ type NFTBSONUnmarshaler struct {
 }
 
 func (n *NFT) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("failed to decode bson of NFT")
+	e := util.StringError(utils.ErrStringDecodeBSON(*n))
 
 	var u NFTBSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {

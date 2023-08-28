@@ -3,9 +3,11 @@ package types
 import (
 	"strings"
 
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/pkg/errors"
 )
 
 var MaxNFTHashLength = 1024
@@ -13,13 +15,15 @@ var MaxNFTIndex uint64 = 10000
 
 type NFTHash string
 
-func (hs NFTHash) IsValid([]byte) error {
-	if l := len(hs); l > MaxNFTHashLength {
-		return util.ErrInvalid.Errorf("nft hash length over max, %d > %d", l, MaxNFTHashLength)
+func (h NFTHash) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(h))
+
+	if l := len(h); l > MaxNFTHashLength {
+		return e.Wrap(errors.Errorf("invalid length of nft hash, %d > max(%d)", l, MaxNFTHashLength))
 	}
 
-	if hs != "" && strings.TrimSpace(string(hs)) == "" {
-		return util.ErrInvalid.Errorf("empty nft hash")
+	if h != "" && strings.TrimSpace(string(h)) == "" {
+		return e.Wrap(errors.Errorf("empty nft hash"))
 	}
 
 	return nil
@@ -70,6 +74,8 @@ func NewNFT(
 }
 
 func (n NFT) IsValid([]byte) error {
+	e := util.ErrInvalid.Errorf(utils.ErrStringInvalid(n))
+
 	if err := util.CheckIsValiders(nil, false,
 		n.owner,
 		n.hash,
@@ -77,28 +83,20 @@ func (n NFT) IsValid([]byte) error {
 		n.approved,
 		n.creators,
 	); err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	if n.uri == "" {
-		return util.ErrInvalid.Errorf("empty uri")
+		return e.Wrap(errors.Errorf("empty uri"))
 	}
 
 	return nil
 }
 
 func (n NFT) Bytes() []byte {
-	ba := make([]byte, 1)
-
-	if n.active {
-		ba[0] = 1
-	} else {
-		ba[0] = 0
-	}
-
 	return util.ConcatBytesSlice(
 		util.Uint64ToBytes(n.id),
-		ba,
+		utils.BoolToByteSlice(n.active),
 		n.owner.Bytes(),
 		n.hash.Bytes(),
 		[]byte(n.uri.String()),
@@ -136,61 +134,59 @@ func (n NFT) Creators() Signers {
 }
 
 func (n NFT) Addresses() []base.Address {
-	var as []base.Address
-	copy(as, n.Creators().Addresses())
+	as := n.Creators().Addresses()
+
 	for i, a := range as {
-		if n.approved != a {
+		if n.approved == a {
 			break
 		}
-		if i == (len(as) - 1) {
+		if i == len(as)-1 {
 			as = append(as, n.approved)
 		}
 	}
-	as = append(as)
 
 	for i, a := range as {
-		if n.owner != a {
+		if n.owner == a {
 			break
 		}
 		if i == (len(as) - 1) {
 			as = append(as, n.owner)
 		}
 	}
-	as = append(as)
 
 	return as
 }
 
-func (n NFT) Equal(cn NFT) bool {
-	if !(n.ID() == cn.ID()) {
+func (n NFT) Equal(c NFT) bool {
+	if !(n.ID() == c.ID()) {
 		return false
 	}
 
-	if n.Active() != cn.Active() {
+	if n.Active() != c.Active() {
 		return false
 	}
 
-	if !n.Owner().Equal(cn.Owner()) {
+	if !n.Owner().Equal(c.Owner()) {
 		return false
 	}
 
-	if n.NFTHash() != cn.NFTHash() {
+	if n.NFTHash() != c.NFTHash() {
 		return false
 	}
 
-	if n.URI() != cn.URI() {
+	if n.URI() != c.URI() {
 		return false
 	}
 
-	if !n.Approved().Equal(cn.Approved()) {
+	if !n.Approved().Equal(c.Approved()) {
 		return false
 	}
 
-	if !n.Creators().Equal(cn.Creators()) {
+	if !n.Creators().Equal(c.Creators()) {
 		return false
 	}
 
-	return n.ID() == cn.ID()
+	return n.ID() == c.ID()
 }
 
 func (n NFT) ExistsApproved() bool {

@@ -2,18 +2,19 @@ package nft
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
-	statenft "github.com/ProtoconNet/mitum-nft/v2/state"
+	currencystate "github.com/ProtoconNet/mitum-currency/v3/state"
+	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 
-	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/state"
 	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
-	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
 )
@@ -31,54 +32,58 @@ var delegateProcessorPool = sync.Pool{
 }
 
 func (Delegate) Process(
-	ctx context.Context, getStateFunc mitumbase.GetStateFunc,
-) ([]mitumbase.StateMergeValue, mitumbase.OperationProcessReasonError, error) {
+	ctx context.Context, getStateFunc base.GetStateFunc,
+) ([]base.StateMergeValue, base.OperationProcessReasonError, error) {
 	return nil, nil, nil
 }
 
 type DelegateItemProcessor struct {
 	h      util.Hash
-	sender mitumbase.Address
+	sender base.Address
 	box    *types.OperatorsBook
 	item   DelegateItem
 }
 
 func (ipp *DelegateItemProcessor) PreProcess(
-	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc,
+	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
 ) error {
-	if err := ipp.item.IsValid(nil); err != nil {
-		return err
+	e := util.StringError(ErrStringPreProcess(*ipp))
+
+	it := ipp.item
+
+	if err := currencystate.CheckExistsState(statecurrency.StateKeyAccount(it.Operator()), getStateFunc); err != nil {
+		return e.Wrap(ErrStateNotFound("operator", it.Operator().String(), err))
 	}
 
-	if err := state.CheckExistsState(statecurrency.StateKeyAccount(ipp.item.Operator()), getStateFunc); err != nil {
-		return err
-	}
-
-	if ipp.sender.Equal(ipp.item.Operator()) {
-		return errors.Errorf("sender cannot be operator itself, %q", ipp.item.Operator())
+	if ipp.sender.Equal(it.Operator()) {
+		return e.Wrap(errors.Errorf("sender cannot be operator itself, %s", it.Operator()))
 	}
 
 	return nil
 }
 
 func (ipp *DelegateItemProcessor) Process(
-	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc,
-) ([]mitumbase.StateMergeValue, error) {
+	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
+) ([]base.StateMergeValue, error) {
+	e := util.StringError(ErrStringProcess(*ipp))
+
+	it := ipp.item
+
 	if ipp.box == nil {
-		return nil, errors.Errorf("nft box not found, %q", statenft.StateKeyOperators(ipp.item.contract, ipp.item.Collection(), ipp.sender))
+		return nil, e.Wrap(ErrStateNotFound("nft box", utils.StringerChain(it.Contract(), it.Collection()), nil))
 	}
 
 	switch ipp.item.Mode() {
 	case DelegateAllow:
-		if err := ipp.box.Append(ipp.item.Operator()); err != nil {
-			return nil, err
+		if err := ipp.box.Append(it.Operator()); err != nil {
+			return nil, e.Wrap(errors.Errorf("failed to append operator, %s: %v", it.Operator(), err))
 		}
 	case DelegateCancel:
 		if err := ipp.box.Remove(ipp.item.Operator()); err != nil {
-			return nil, err
+			return nil, e.Wrap(errors.Errorf("failed to remove operator, %s: %v", it.Operator(), err))
 		}
 	default:
-		return nil, errors.Errorf("wrong mode for delegate item, %q; \"allow\" | \"cancel\"", ipp.item.Mode())
+		return nil, e.Wrap(errors.Errorf("wrong mode for delegate item, %s: \"allow\" | \"cancel\"", ipp.item.Mode()))
 	}
 
 	ipp.box.Sort(true)
@@ -98,25 +103,26 @@ func (ipp *DelegateItemProcessor) Close() error {
 }
 
 type DelegateProcessor struct {
-	*mitumbase.BaseOperationProcessor
+	*base.BaseOperationProcessor
 }
 
 func NewDelegateProcessor() currencytypes.GetNewProcessor {
 	return func(
-		height mitumbase.Height,
-		getStateFunc mitumbase.GetStateFunc,
-		newPreProcessConstraintFunc mitumbase.NewOperationProcessorProcessFunc,
-		newProcessConstraintFunc mitumbase.NewOperationProcessorProcessFunc,
-	) (mitumbase.OperationProcessor, error) {
-		e := util.StringError("failed to create new DelegateProcessor")
+		height base.Height,
+		getStateFunc base.GetStateFunc,
+		newPreProcessConstraintFunc base.NewOperationProcessorProcessFunc,
+		newProcessConstraintFunc base.NewOperationProcessorProcessFunc,
+	) (base.OperationProcessor, error) {
+		t := DelegateProcessor{}
+		e := util.StringError(utils.ErrStringCreate(fmt.Sprintf("new %T", t)))
 
 		nopp := delegateProcessorPool.Get()
 		opp, ok := nopp.(*DelegateProcessor)
 		if !ok {
-			return nil, e.Errorf("expected DelegateProcessor, not %T", nopp)
+			return nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(t, nopp)))
 		}
 
-		b, err := mitumbase.NewBaseOperationProcessor(
+		b, err := base.NewBaseOperationProcessor(
 			height, getStateFunc, newPreProcessConstraintFunc, newProcessConstraintFunc)
 		if err != nil {
 			return nil, e.Wrap(err)
@@ -129,58 +135,61 @@ func NewDelegateProcessor() currencytypes.GetNewProcessor {
 }
 
 func (opp *DelegateProcessor) PreProcess(
-	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc,
-) (context.Context, mitumbase.OperationProcessReasonError, error) {
-	e := util.StringError("failed to preprocess Delegate")
+	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
+) (context.Context, base.OperationProcessReasonError, error) {
+	e := util.StringError(ErrStringPreProcess(*opp))
 
 	fact, ok := op.Fact().(DelegateFact)
 	if !ok {
-		return ctx, nil, e.Errorf("expected DelgateFact, not %T", op.Fact())
+		return ctx, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(DelegateFact{}, op.Fact())))
 	}
 
 	if err := fact.IsValid(nil); err != nil {
 		return ctx, nil, e.Wrap(err)
 	}
 
-	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q; %w", fact.Sender(), err), nil
+	if err := currencystate.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
+		return nil, BaseErrStateNotFound("sender", fact.Sender().String(), err), nil
 	}
 
-	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("contract account cannot have operators, %q", fact.Sender()), nil
+	if err := currencystate.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
+		return nil, ErrBaseOperationProcess("contract account cannot have operators", fact.Sender().String(), err), nil
 	}
 
-	if err := state.CheckFactSignsByState(fact.sender, op.Signs(), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing; %w", err), nil
+	if err := currencystate.CheckFactSignsByState(fact.Sender(), op.Signs(), getStateFunc); err != nil {
+		return ctx, ErrBaseOperationProcess("invalid signing", "", err), nil
 	}
 
 	for _, item := range fact.Items() {
-		st, err := state.ExistsState(statenft.NFTStateKey(item.contract, item.Collection(), statenft.CollectionKey), "key of design", getStateFunc)
+		g := state.NewStateKeyGenerator(item.Contract(), item.Collection())
+		k := utils.StringerChain(item.Contract(), item.Collection())
+
+		st, err := currencystate.ExistsState(g.Design(), "key of design", getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q; %w", item.Collection(), err), nil
+			return nil, BaseErrStateNotFound("design", k, err), nil
 		}
 
-		design, err := statenft.StateCollectionValue(st)
+		design, err := state.StateDesignValue(st)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", item.Collection(), err), nil
+			return nil, BaseErrStateNotFound("design value", k, err), nil
 		}
 
 		if !design.Active() {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("deactivated collection, %q", item.Collection()), nil
+			return nil, ErrBaseOperationProcess("deactivated collection", k, nil), nil
 		}
 
-		st, err = state.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract account", getStateFunc)
+		st, err = currencystate.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract", getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("parent not found, %q; %w", design.Parent(), err), nil
+			return nil, BaseErrStateNotFound("parent", design.Parent().String(), err), nil
 		}
 
 		ca, err := stateextension.StateContractAccountValue(st)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("contract account value not found, %q; %w", design.Parent(), err), nil
+			return nil, BaseErrStateNotFound("parent value", design.Parent().String(), err), nil
 		}
 
 		if !ca.IsActive() {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("deactivated contract account, %q", design.Parent()), nil
+			return nil, ErrBaseOperationProcess("deactivated contract account", design.Parent().String(), nil), nil
 		}
 	}
 
@@ -188,7 +197,7 @@ func (opp *DelegateProcessor) PreProcess(
 		ip := delegateItemProcessorPool.Get()
 		ipc, ok := ip.(*DelegateItemProcessor)
 		if !ok {
-			return nil, nil, e.Errorf("expected DelegateItemProcessor, not %T", ip)
+			return nil, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(&DelegateItemProcessor{}, ip)))
 		}
 
 		ipc.h = op.Hash()
@@ -197,7 +206,7 @@ func (opp *DelegateProcessor) PreProcess(
 		ipc.box = nil
 
 		if err := ipc.PreProcess(ctx, op, getStateFunc); err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("fail to preprocess DelegateItem; %w", err), nil
+			return nil, ErrBaseOperationProcess("", "", err), nil
 		}
 
 		ipc.Close()
@@ -207,55 +216,58 @@ func (opp *DelegateProcessor) PreProcess(
 }
 
 func (opp *DelegateProcessor) Process(
-	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc) (
-	[]mitumbase.StateMergeValue, mitumbase.OperationProcessReasonError, error,
+	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc) (
+	[]base.StateMergeValue, base.OperationProcessReasonError, error,
 ) {
-	e := util.StringError("failed to process Delegate")
+	e := util.StringError(ErrStringProcess(*opp))
 
 	fact, ok := op.Fact().(DelegateFact)
 	if !ok {
-		return nil, nil, e.Errorf("expected DelgateFact, not %T", op.Fact())
+		return nil, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(DelegateFact{}, op.Fact())))
 	}
 
 	boxes := map[string]*types.OperatorsBook{}
 	for _, item := range fact.Items() {
-		ak := statenft.StateKeyOperators(item.contract, item.Collection(), fact.Sender())
+		g := state.NewStateKeyGenerator(item.Contract(), item.Collection())
+		k := g.OperatorsBook(fact.Sender())
 
 		var operators types.OperatorsBook
-		switch st, found, err := getStateFunc(ak); {
+		switch st, found, err := getStateFunc(k); {
 		case err != nil:
-			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to get state of operators book, %q; %w", ak, err), nil
+			return nil, BaseErrStateNotFound("operators", k, err), nil
 		case !found:
 			operators = types.NewOperatorsBook(item.Collection(), nil)
 		default:
-			o, err := statenft.StateOperatorsBookValue(st)
+			o, err := state.StateOperatorsBookValue(st)
 			if err != nil {
-				return nil, mitumbase.NewBaseOperationProcessReasonError("operators book value not found, %q; %w", ak, err), nil
+				return nil, BaseErrStateNotFound("operators value", k, err), nil
 			} else {
-				operators = *o
+				operators = o
 			}
 		}
-		boxes[ak] = &operators
+		boxes[k] = &operators
 	}
 
-	var sts []mitumbase.StateMergeValue // nolint:prealloc
+	var sts []base.StateMergeValue // nolint:prealloc
 
 	ipcs := make([]*DelegateItemProcessor, len(fact.items))
 	for i, item := range fact.Items() {
+		g := state.NewStateKeyGenerator(item.Contract(), item.Collection())
+
 		ip := delegateItemProcessorPool.Get()
 		ipc, ok := ip.(*DelegateItemProcessor)
 		if !ok {
-			return nil, nil, e.Errorf("expected DelegateItemProcessor, not %T", ip)
+			return nil, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(&DelegateItemProcessor{}, ip)))
 		}
 
 		ipc.h = op.Hash()
 		ipc.sender = fact.Sender()
 		ipc.item = item
-		ipc.box = boxes[statenft.StateKeyOperators(item.contract, item.Collection(), fact.Sender())]
+		ipc.box = boxes[g.OperatorsBook(fact.Sender())]
 
 		s, err := ipc.Process(ctx, op, getStateFunc)
 		if err != nil {
-			return nil, mitumbase.NewBaseOperationProcessReasonError("failed to process DelegateItem; %w", err), nil
+			return nil, ErrBaseOperationProcess("", "", err), nil
 		}
 		sts = append(sts, s...)
 
@@ -263,7 +275,7 @@ func (opp *DelegateProcessor) Process(
 	}
 
 	for ak, box := range boxes {
-		bv := state.NewStateMergeValue(ak, statenft.NewOperatorsBookStateValue(*box))
+		bv := currencystate.NewStateMergeValue(ak, state.NewOperatorsBookStateValue(*box))
 		sts = append(sts, bv)
 	}
 
@@ -271,22 +283,23 @@ func (opp *DelegateProcessor) Process(
 		ipc.Close()
 	}
 
-	required, err := opp.calculateItemsFee(op, getStateFunc)
+	required, err := CalculateItemsFee(getStateFunc, fact.items)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to calculate fee; %w", err), nil
-	}
-	sb, err := currency.CheckEnoughBalance(fact.sender, required, getStateFunc)
-	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check enough balance; %w", err), nil
+		return nil, ErrBaseOperationProcess("failed to calculate fee", "", err), nil
 	}
 
-	for i := range sb {
-		v, ok := sb[i].Value().(statecurrency.BalanceStateValue)
+	sb, err := currency.CheckEnoughBalance(fact.sender, required, getStateFunc)
+	if err != nil {
+		return nil, ErrBaseOperationProcess("failed to check enough balance", fact.sender.String(), err), nil
+	}
+
+	for i, b := range sb {
+		v, ok := b.Value().(statecurrency.BalanceStateValue)
 		if !ok {
-			return nil, nil, e.Errorf("expected BalanceStateValue, not %T", sb[i].Value())
+			return nil, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(statecurrency.BalanceStateValue{}, b.Value())))
 		}
 		stv := statecurrency.NewBalanceStateValue(v.Amount.WithBig(v.Amount.Big().Sub(required[i][0])))
-		sts = append(sts, state.NewStateMergeValue(sb[i].Key(), stv))
+		sts = append(sts, currencystate.NewStateMergeValue(b.Key(), stv))
 	}
 
 	return sts, nil, nil
@@ -294,20 +307,5 @@ func (opp *DelegateProcessor) Process(
 
 func (opp *DelegateProcessor) Close() error {
 	delegateProcessorPool.Put(opp)
-
 	return nil
-}
-
-func (opp *DelegateProcessor) calculateItemsFee(op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc) (map[currencytypes.CurrencyID][2]common.Big, error) {
-	fact, ok := op.Fact().(DelegateFact)
-	if !ok {
-		return nil, errors.Errorf("expected DelegateFact, not %T", op.Fact())
-	}
-
-	items := make([]CollectionItem, len(fact.items))
-	for i := range fact.items {
-		items[i] = fact.items[i]
-	}
-
-	return CalculateCollectionItemsFee(getStateFunc, items)
 }

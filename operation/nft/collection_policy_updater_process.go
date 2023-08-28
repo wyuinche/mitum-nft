@@ -2,53 +2,56 @@ package nft
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
+	currencystate "github.com/ProtoconNet/mitum-currency/v3/state"
 	currencytypes "github.com/ProtoconNet/mitum-currency/v3/types"
-	statenft "github.com/ProtoconNet/mitum-nft/v2/state"
+	"github.com/ProtoconNet/mitum-nft/v2/state"
 	"github.com/ProtoconNet/mitum-nft/v2/types"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 
-	"github.com/ProtoconNet/mitum-currency/v3/state"
 	statecurrency "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	stateextension "github.com/ProtoconNet/mitum-currency/v3/state/extension"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
 )
 
-var collectionPolicyUpdaterProcessorPool = sync.Pool{
+var collectionCollectionPolicyUpdaterProcessorPool = sync.Pool{
 	New: func() interface{} {
 		return new(CollectionPolicyUpdaterProcessor)
 	},
 }
 
 func (CollectionPolicyUpdater) Process(
-	ctx context.Context, getStateFunc mitumbase.GetStateFunc,
-) ([]mitumbase.StateMergeValue, mitumbase.OperationProcessReasonError, error) {
+	ctx context.Context, getStateFunc base.GetStateFunc,
+) ([]base.StateMergeValue, base.OperationProcessReasonError, error) {
 	return nil, nil, nil
 }
 
 type CollectionPolicyUpdaterProcessor struct {
-	*mitumbase.BaseOperationProcessor
+	*base.BaseOperationProcessor
 }
 
 func NewCollectionPolicyUpdaterProcessor() currencytypes.GetNewProcessor {
 	return func(
-		height mitumbase.Height,
-		getStateFunc mitumbase.GetStateFunc,
-		newPreProcessConstraintFunc mitumbase.NewOperationProcessorProcessFunc,
-		newProcessConstraintFunc mitumbase.NewOperationProcessorProcessFunc,
-	) (mitumbase.OperationProcessor, error) {
-		e := util.StringError("failed to create new CollectionPolicyUpdaterProcessor")
+		height base.Height,
+		getStateFunc base.GetStateFunc,
+		newPreProcessConstraintFunc base.NewOperationProcessorProcessFunc,
+		newProcessConstraintFunc base.NewOperationProcessorProcessFunc,
+	) (base.OperationProcessor, error) {
+		t := CollectionPolicyUpdaterProcessor{}
+		e := util.StringError(utils.ErrStringCreate(fmt.Sprintf("new %T", t)))
 
-		nopp := collectionPolicyUpdaterProcessorPool.Get()
+		nopp := collectionCollectionPolicyUpdaterProcessorPool.Get()
 		opp, ok := nopp.(*CollectionPolicyUpdaterProcessor)
 		if !ok {
-			return nil, errors.Errorf("expected CollectionPolicyUpdaterProcessor, not %T", nopp)
+			return nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(t, nopp)))
 		}
 
-		b, err := mitumbase.NewBaseOperationProcessor(
+		b, err := base.NewBaseOperationProcessor(
 			height, getStateFunc, newPreProcessConstraintFunc, newProcessConstraintFunc)
 		if err != nil {
 			return nil, e.Wrap(err)
@@ -61,131 +64,149 @@ func NewCollectionPolicyUpdaterProcessor() currencytypes.GetNewProcessor {
 }
 
 func (opp *CollectionPolicyUpdaterProcessor) PreProcess(
-	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc,
-) (context.Context, mitumbase.OperationProcessReasonError, error) {
-	e := util.StringError("failed to preprocess CollectionPolicyUpdater")
+	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc,
+) (context.Context, base.OperationProcessReasonError, error) {
+	e := util.StringError(ErrStringPreProcess(*opp))
+
 	fact, ok := op.Fact().(CollectionPolicyUpdaterFact)
 	if !ok {
-		return ctx, nil, e.Errorf("not CollectionPolicyUpdaterFact, %T", op.Fact())
+		return ctx, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(CollectionPolicyUpdaterFact{}, op.Fact())))
 	}
 
 	if err := fact.IsValid(nil); err != nil {
 		return ctx, nil, e.Wrap(err)
 	}
 
-	if err := state.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("sender not found, %q; %w", fact.Sender(), err), nil
+	if err := currencystate.CheckExistsState(statecurrency.StateKeyAccount(fact.Sender()), getStateFunc); err != nil {
+		return nil, BaseErrStateNotFound("sender", fact.Sender().String(), err), nil
 	}
 
-	if err := state.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("contract account cannot update collection policy, %q; %w", fact.Sender(), err), nil
+	if err := currencystate.CheckNotExistsState(stateextension.StateKeyContractAccount(fact.Sender()), getStateFunc); err != nil {
+		return nil, ErrBaseOperationProcess("contract account cannot update policy", fact.Sender().String(), err), nil
 	}
 
-	if err := state.CheckFactSignsByState(fact.Sender(), op.Signs(), getStateFunc); err != nil {
-		return ctx, mitumbase.NewBaseOperationProcessReasonError("invalid signing; %w", err), nil
+	if err := currencystate.CheckExistsState(statecurrency.StateKeyCurrencyDesign(fact.Currency()), getStateFunc); err != nil {
+		return nil, BaseErrStateNotFound("currency", fact.Currency().String(), err), nil
 	}
 
-	st, err := state.ExistsState(statenft.NFTStateKey(fact.contract, fact.collection, statenft.CollectionKey), "key of collection design", getStateFunc)
+	if err := currencystate.CheckFactSignsByState(fact.Sender(), op.Signs(), getStateFunc); err != nil {
+		return ctx, ErrBaseOperationProcess("invalid signing", "", err), nil
+	}
+
+	g := state.NewStateKeyGenerator(fact.Contract(), fact.Collection())
+	k := utils.StringerChain(fact.Contract(), fact.Collection())
+
+	st, err := currencystate.ExistsState(g.Design(), "key of design", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q; %w", fact.Collection(), err), nil
+		return nil, BaseErrStateNotFound("design", k, err), nil
 	}
 
-	design, err := statenft.StateCollectionValue(st)
+	design, err := state.StateDesignValue(st)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", fact.Collection(), err), nil
+		return nil, BaseErrStateNotFound("design value", k, err), nil
 	}
 
 	if !design.Active() {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("deactivated collection, %q", fact.Collection()), nil
+		return nil, ErrBaseOperationProcess("deactivated collection", k, nil), nil
 	}
 
 	if !design.Creator().Equal(fact.Sender()) {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("not creator of collection design, %q", fact.Collection()), nil
+		return nil, ErrBaseOperationProcess("not creator of collection design", k, nil), nil
 	}
 
-	st, err = state.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract account", getStateFunc)
+	st, err = currencystate.ExistsState(stateextension.StateKeyContractAccount(design.Parent()), "key of contract", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("parent not found, %q; %w", design.Parent(), err), nil
+		return nil, BaseErrStateNotFound("parent", design.Parent().String(), err), nil
 	}
 
 	ca, err := stateextension.StateContractAccountValue(st)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("contract account value not found, %q; %w", design.Parent(), err), nil
+		return nil, BaseErrStateNotFound("parent value", design.Parent().String(), err), nil
 	}
 
 	if !ca.IsActive() {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("deactivated contract account, %q", design.Parent()), nil
+		return nil, ErrBaseOperationProcess("deactivated contract account", design.Parent().String(), nil), nil
 	}
+
 	return ctx, nil, nil
 }
 
 func (opp *CollectionPolicyUpdaterProcessor) Process(
-	ctx context.Context, op mitumbase.Operation, getStateFunc mitumbase.GetStateFunc) (
-	[]mitumbase.StateMergeValue, mitumbase.OperationProcessReasonError, error,
+	ctx context.Context, op base.Operation, getStateFunc base.GetStateFunc) (
+	[]base.StateMergeValue, base.OperationProcessReasonError, error,
 ) {
-	e := util.StringError("failed to process CollectionPolicyUpdater")
+	e := util.StringError(ErrStringProcess(*opp))
+
 	fact, ok := op.Fact().(CollectionPolicyUpdaterFact)
 	if !ok {
-		return nil, nil, e.Errorf("expected CollectionPolicyUpdaterFact, not %T", op.Fact())
+		return nil, nil, e.Wrap(errors.Errorf(utils.ErrStringTypeCast(CollectionPolicyUpdaterFact{}, op.Fact())))
 	}
 
-	st, err := state.ExistsState(statenft.NFTStateKey(fact.contract, fact.collection, statenft.CollectionKey), "key of design", getStateFunc)
+	g := state.NewStateKeyGenerator(fact.contract, fact.collection)
+	k := utils.StringerChain(fact.contract, fact.collection)
+
+	st, err := currencystate.ExistsState(g.Design(), "key of design", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design not found, %q; %w", fact.Collection(), err), nil
+		return nil, BaseErrStateNotFound("design", k, err), nil
 	}
 
-	design, err := statenft.StateCollectionValue(st)
+	design, err := state.StateDesignValue(st)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("collection design value not found, %q; %w", fact.Collection(), err), nil
+		return nil, BaseErrStateNotFound("design value", k, err), nil
 	}
 
-	sts := make([]mitumbase.StateMergeValue, 2)
+	sts := make([]base.StateMergeValue, 2)
 
-	de := types.NewDesign(
+	d := types.NewDesign(
 		design.Parent(),
 		design.Creator(),
 		design.Collection(),
 		design.Active(),
-		types.NewCollectionPolicy(fact.name, fact.royalty, fact.uri, fact.whitelist),
+		types.NewPolicy(fact.name, fact.royalty, fact.uri, fact.whitelist),
 	)
-	sts[0] = state.NewStateMergeValue(statenft.NFTStateKey(fact.contract, design.Collection(), statenft.CollectionKey), statenft.NewCollectionStateValue(de))
+	if err := d.IsValid(nil); err != nil {
+		return nil, BaseErrInvalid(d, err), nil
+	}
 
-	currencyPolicy, err := state.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
+	sts[0] = currencystate.NewStateMergeValue(g.Design(), state.NewDesignStateValue(d))
+
+	currencyPolicy, err := currencystate.ExistsCurrencyPolicy(fact.Currency(), getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("currency not found, %q; %w", fact.Currency(), err), nil
+		return nil, BaseErrStateNotFound("currency", fact.Currency().String(), err), nil
 	}
 
 	fee, err := currencyPolicy.Feeer().Fee(common.ZeroBig)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to check fee of currency, %q; %w", fact.Currency(), err), nil
+		return nil, ErrBaseOperationProcess("failed to check currency fee", fact.Currency().String(), err), nil
 	}
 
-	st, err = state.ExistsState(statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), "key of sender balance", getStateFunc)
+	st, err = currencystate.ExistsState(statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), "key of balance", getStateFunc)
 	if err != nil {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("sender balance not found, %q; %w", fact.Sender(), err), nil
+		return nil, BaseErrStateNotFound("balance", utils.StringerChain(fact.Sender(), fact.Currency()), err), nil
 	}
-	sb := state.NewStateMergeValue(st.Key(), st.Value())
+	sb := currencystate.NewStateMergeValue(st.Key(), st.Value())
 
 	switch b, err := statecurrency.StateBalanceValue(st); {
 	case err != nil:
-		return nil, mitumbase.NewBaseOperationProcessReasonError("failed to get balance value, %q; %w", statecurrency.StateKeyBalance(fact.Sender(), fact.Currency()), err), nil
+		return nil, BaseErrStateNotFound("balance value", utils.StringerChain(fact.Sender(), fact.Currency()), err), nil
 	case b.Big().Compare(fee) < 0:
-		return nil, mitumbase.NewBaseOperationProcessReasonError("not enough balance of sender, %q", fact.Sender()), nil
+		return nil, ErrBaseOperationProcess("not enough balance of sender", fact.Sender().String(), err), nil
 	}
 
 	v, ok := sb.Value().(statecurrency.BalanceStateValue)
 	if !ok {
-		return nil, mitumbase.NewBaseOperationProcessReasonError("expected BalanceStateValue, not %T", sb.Value()), nil
+		return nil, ErrBaseOperationProcess(utils.ErrStringTypeCast(statecurrency.BalanceStateValue{}, sb.Value()), utils.StringerChain(fact.Sender(), fact.Currency()), nil), nil
 	}
-	sts[1] = state.NewStateMergeValue(
+
+	sts[1] = currencystate.NewStateMergeValue(
 		sb.Key(),
 		statecurrency.NewBalanceStateValue(v.Amount.WithBig(v.Amount.Big().Sub(fee))),
 	)
+
 	return sts, nil, nil
 }
 
 func (opp *CollectionPolicyUpdaterProcessor) Close() error {
-	collectionPolicyUpdaterProcessorPool.Put(opp)
-
+	collectionCollectionPolicyUpdaterProcessorPool.Put(opp)
 	return nil
 }

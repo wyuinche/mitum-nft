@@ -2,7 +2,8 @@ package nft
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/types"
-	mitumbase "github.com/ProtoconNet/mitum2/base"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
+	base "github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -10,10 +11,10 @@ import (
 
 type NFTSignItemJSONMarshaler struct {
 	hint.BaseHinter
-	Contract   mitumbase.Address `json:"contract"`
-	Collection types.ContractID  `json:"collection"`
-	NFT        uint64            `json:"nft"`
-	Currency   types.CurrencyID  `json:"currency"`
+	Contract   base.Address     `json:"contract"`
+	Collection types.ContractID `json:"collection"`
+	IDX        uint64           `json:"nftidx"`
+	Currency   types.CurrencyID `json:"currency"`
 }
 
 func (it NFTSignItem) MarshalJSON() ([]byte, error) {
@@ -21,7 +22,7 @@ func (it NFTSignItem) MarshalJSON() ([]byte, error) {
 		BaseHinter: it.BaseHinter,
 		Contract:   it.contract,
 		Collection: it.collection,
-		NFT:        it.nft,
+		IDX:        it.idx,
 		Currency:   it.currency,
 	})
 }
@@ -30,12 +31,12 @@ type NFTSignItemJSONUnmarshaler struct {
 	Hint       hint.Hint `json:"_hint"`
 	Contract   string    `json:"contract"`
 	Collection string    `json:"collection"`
-	NFT        uint64    `json:"nft"`
+	NFT        uint64    `json:"nftidx"`
 	Currency   string    `json:"currency"`
 }
 
 func (it *NFTSignItem) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of NFTSignItem")
+	e := util.StringError(utils.ErrStringDecodeJSON(*it))
 
 	var u NFTSignItemJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {

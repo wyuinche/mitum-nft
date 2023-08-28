@@ -2,32 +2,26 @@ package cmds
 
 import (
 	"context"
+
 	currencycmds "github.com/ProtoconNet/mitum-currency/v3/cmds"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum-nft/v2/operation/nft"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
 )
 
 type NFTTransferCommand struct {
-	BaseCommand
-	currencycmds.OperationFlags
-	Sender     currencycmds.AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Receiver   currencycmds.AddressFlag    `arg:"" name:"receiver" help:"nft owner" required:"true"`
-	Contract   currencycmds.AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	Collection string                      `arg:"" name:"collection" help:"collection id" required:"true"`
-	NFT        uint64                      `arg:"" name:"nft" help:"target nft"`
-	Currency   currencycmds.CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
-	sender     base.Address
-	receiver   base.Address
-	contract   base.Address
-	collection types.ContractID
+	OperationCommand
+	Receiver currencycmds.AddressFlag `arg:"" name:"receiver" help:"nft owner" required:"true"`
+	NFT      uint64                   `arg:"" name:"nft" help:"target nft"`
+	receiver base.Address
 }
 
 func NewNFTTranfserCommand() NFTTransferCommand {
-	cmd := NewBaseCommand()
-	return NFTTransferCommand{BaseCommand: *cmd}
+	cmd := NewOperationCommand()
+	return NFTTransferCommand{OperationCommand: *cmd}
 }
 
 func (cmd *NFTTransferCommand) Run(pctx context.Context) error { // nolint:dupl
@@ -53,26 +47,14 @@ func (cmd *NFTTransferCommand) Run(pctx context.Context) error { // nolint:dupl
 }
 
 func (cmd *NFTTransferCommand) parseFlags() error {
-	if err := cmd.OperationFlags.IsValid(nil); err != nil {
+	if err := cmd.OperationCommand.parseFlags(); err != nil {
 		return err
-	}
-
-	if a, err := cmd.Sender.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid sender address format, %q", cmd.Sender.String())
-	} else {
-		cmd.sender = a
 	}
 
 	if a, err := cmd.Receiver.Encode(enc); err != nil {
 		return errors.Wrapf(err, "invalid receiver format, %q", cmd.Receiver.String())
 	} else {
 		cmd.receiver = a
-	}
-
-	if a, err := cmd.Contract.Encode(enc); err != nil {
-		return errors.Wrapf(err, "invalid contract address format, %q", cmd.Contract.String())
-	} else {
-		cmd.contract = a
 	}
 
 	col := types.ContractID(cmd.Collection)
@@ -87,7 +69,7 @@ func (cmd *NFTTransferCommand) parseFlags() error {
 }
 
 func (cmd *NFTTransferCommand) createOperation() (base.Operation, error) {
-	e := util.StringError("failed to create nft-transfer operation")
+	e := util.StringError(utils.ErrStringCreate("nft-transfer operation"))
 
 	item := nft.NewNFTTransferItem(cmd.contract, cmd.collection, cmd.receiver, cmd.NFT, cmd.Currency.CID)
 	fact := nft.NewNFTTransferFact(
@@ -100,6 +82,7 @@ func (cmd *NFTTransferCommand) createOperation() (base.Operation, error) {
 	if err != nil {
 		return nil, e.Wrap(err)
 	}
+
 	err = op.HashSign(cmd.Privatekey, cmd.NetworkID.NetworkID())
 	if err != nil {
 		return nil, e.Wrap(err)

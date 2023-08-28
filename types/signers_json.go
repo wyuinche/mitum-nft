@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -14,11 +15,11 @@ type SignersJSONMarshaler struct {
 	Signers []Signer `json:"signers"`
 }
 
-func (sgns Signers) MarshalJSON() ([]byte, error) {
+func (s Signers) MarshalJSON() ([]byte, error) {
 	return util.MarshalJSON(SignersJSONMarshaler{
-		BaseHinter: sgns.BaseHinter,
-		Total:      sgns.total,
-		Signers:    sgns.signers,
+		BaseHinter: s.BaseHinter,
+		Total:      s.total,
+		Signers:    s.signers,
 	})
 }
 
@@ -28,13 +29,13 @@ type SignersJSONUnmarshaler struct {
 	Signers json.RawMessage `json:"signers"`
 }
 
-func (sgns *Signers) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of Signers")
+func (s *Signers) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
+	e := util.StringError(utils.ErrStringDecodeJSON(*s))
 
 	var u SignersJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}
 
-	return sgns.unmarshal(enc, u.Hint, u.Total, u.Signers)
+	return s.unmarshal(enc, u.Hint, u.Total, u.Signers)
 }

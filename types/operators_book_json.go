@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/ProtoconNet/mitum-nft/v2/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonenc "github.com/ProtoconNet/mitum2/util/encoder/json"
@@ -14,11 +15,11 @@ type OperatorsBookJSONMarshaler struct {
 	Operators  []base.Address   `json:"operators"`
 }
 
-func (ob OperatorsBook) MarshalJSON() ([]byte, error) {
+func (o OperatorsBook) MarshalJSON() ([]byte, error) {
 	return util.MarshalJSON(OperatorsBookJSONMarshaler{
-		BaseHinter: ob.BaseHinter,
-		Collection: ob.collection,
-		Operators:  ob.operators,
+		BaseHinter: o.BaseHinter,
+		Collection: o.collection,
+		Operators:  o.operators,
 	})
 }
 
@@ -28,13 +29,13 @@ type OperatorsBookJSONUnmarshaler struct {
 	Operators  []string  `json:"operators"`
 }
 
-func (ob *OperatorsBook) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
-	e := util.StringError("failed to decode json of operators book")
+func (o *OperatorsBook) DecodeJSON(b []byte, enc *jsonenc.Encoder) error {
+	e := util.StringError(utils.ErrStringDecodeJSON(*o))
 
 	var u OperatorsBookJSONUnmarshaler
 	if err := enc.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}
 
-	return ob.unmarshal(enc, u.Hint, u.Collection, u.Operators)
+	return o.unmarshal(enc, u.Hint, u.Collection, u.Operators)
 }
