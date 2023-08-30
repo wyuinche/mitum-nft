@@ -15,11 +15,11 @@
 Before you build `mitum-nft`, make sure to run `docker run`.
 
 ```sh
-$ git clone https://github.com/ProtoconNet/mitum-nft
+$ git clone https://github.com/wyuinche/mitum-nft
 
 $ cd mitum-nft
 
-$ git checkout -t origin/v2
+$ git checkout -t origin/refactor
 
 $ go build -o ./mitum-nft
 ```
@@ -36,4 +36,27 @@ $ ./mitum-nft run <config file>
 
 [genesis-design.yml](genesis-design.yml) is a sample of `genesis design file`.
 
-[test-jsons](test-jsons) is a set of sample files for testing.
+To run a node with the default settings, enter the following command:
+
+```sh
+$ ./mitum-nft init --design=standalone.yml genesis-design.yml
+
+$ ./mitum-nft run --design=standalone.yml --dev.allow-consensus
+```
+
+Docker and Mongodb must be installed to run with digest api.
+
+```sh
+$ docker run --name mnft -it -p 27017:27017 -d mongo
+```
+
+To run a node without digest api, remove the following from the [standalong.yml](standalone.yml) file.
+
+```yml
+digest:
+  network:
+    bind: http://localhost:54320
+    url: http://localhost:54320
+  database: 
+    uri: mongodb://127.0.0.1:27017/mnft
+```
