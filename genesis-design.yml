@@ -20,8 +20,8 @@ facts:
       _hint: mitum-currency-keys-v0.0.1  
       keys: 
         - _hint: mitum-currency-key-v0.0.1
-          key: kYJADZP1XKNvUNn7XHY39yisp9QCfU1LtyxGw2HRjQwXmpu
-          # D4QPRNSTgYmgRymYVS1mLgyGtCbzeAPYhd5r4jNQahwampr
+          key: x2ktVRTR3pX5rwYsdzKFWh2rGNHyCN8vnXGb9tyqpUanmpu
+          # 4iy8eutW5zrjUw4WXEgXEYcDv224fhN2mfieq8i6o6ibmpr
           weight: 100
       threshold: 100
     currencies:
@@ -36,6 +36,6 @@ facts:
           new_account_min_balance: "1"
           feeer:
             _hint: mitum-currency-fixed-feeer-v0.0.1
-            receiver: FQacpLf7kQQQQGhHv43pehSZn4mCjz1qViky5DG36ZPAmca
+            receiver: Cj9vdLpgzA4sJBDkNWqFizqHtuLQUW47rzHeHyThtjdNmca
             amount: "1"
         aggregate: "1000000000000000000000000000"
